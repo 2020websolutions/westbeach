@@ -1,4 +1,4 @@
-*.log
+# ignore wordpress files
 wp-config.php
 wp-content/advanced-cache.php
 wp-content/backup-db/
@@ -9,10 +9,54 @@ wp-content/upgrade/
 wp-content/uploads/
 wp-content/wp-cache-config.php
 wp-content/plugins/hello.php
-
-/.htaccess
 /license.txt
 /readme.html
+
+# ignore sitemap files
+/sitemap
 /sitemap.xml
 /sitemap.xml.gz
+/robots.txt
 
+#ignore plugin files
+wp-content/plugins/paid-memberships-pro/logs/
+
+
+# ignore server config files
+/cgi-bin
+.ftpquota
+.htaccess
+
+# ignore log files
+*.log
+
+# ignore compiled files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# ignore packaged files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+*.sql
+
+# ignore other versioning
+*.svn
+*.cvs
+
+# ignore OS files
+Thumbs.db
+ehthumbs.db
+*.DS_Store
+
+# ignore project files
+/nbproject
