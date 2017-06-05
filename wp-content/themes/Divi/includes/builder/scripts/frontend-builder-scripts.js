@@ -2541,8 +2541,7 @@
 			if ( $et_pb_number_counter.length || is_frontend_builder ) {
 				window.et_pb_reinit_number_counters = function( $et_pb_number_counter ) {
 
-					function et_format_number( number_value ) {
-						var separator = $et_pb_number_counter.data('number-separator');
+					function et_format_number( number_value, separator ) {
 						return number_value.toString().replace( /\B(?=(\d{3})+(?!\d))/g, separator );
 					}
 
@@ -2552,6 +2551,8 @@
 
 					$et_pb_number_counter.each(function(){
 						var $this_counter = $(this);
+						var separator     = $this_counter.data('number-separator');
+
 						$this_counter.easyPieChart({
 							animate: {
 								duration: 1800,
@@ -2566,10 +2567,10 @@
 							},
 							onStep: function(from, to, percent) {
 								if ( percent != to )
-									$(this.el).find('.percent-value').text( et_format_number( Math.round( parseInt( percent ) ) ) );
+									$(this.el).find('.percent-value').text( et_format_number( Math.round( parseInt( percent ) ), separator ) );
 							},
 							onStop: function(from, to) {
-								$(this.el).find('.percent-value').text( et_format_number( $(this.el).data('number-value') ) );
+								$(this.el).find('.percent-value').text( et_format_number( $(this.el).data('number-value'), separator ) );
 							}
 						});
 					});
@@ -2590,7 +2591,7 @@
 
 				main_position = 'translate(0, ' + y_pos + 'px)';
 
-				$this.find('.et_parallax_bg').css( {
+				$this.children('.et_parallax_bg').css( {
 					'-webkit-transform' : main_position,
 					'-moz-transform'    : main_position,
 					'-ms-transform'     : main_position,
@@ -2883,9 +2884,15 @@
 
 				$element.each( function() {
 					var $this_el  = $(this);
+
+					if ( is_frontend_builder ) {
+						$this_el.removeAttr('data-ratio');
+						$this_el.find('video').removeAttr('style');
+					}
+
 					var el_ratio  = parseFloat( $this_el.attr( 'data-ratio' ) );
-					var el_width  = parseInt( $this_el.find( 'video' ).attr( 'width' ) );
-					var el_height = parseInt( $this_el.find( 'video' ).attr( 'height' ) );
+					var el_width  = parseInt( $this_el.find( 'video' ).attr( 'width' ) || $this_el.find( 'video' ).width() );
+					var el_height = parseInt( $this_el.find( 'video' ).attr( 'height' ) || $this_el.find( 'video' ).height() );
 
 					var ratio = ( ! isNaN( el_ratio ) ) ? el_ratio : ( el_width / el_height );
 
@@ -3093,7 +3100,8 @@
 					$email = $newsletter_container.find( 'input[name="et_pb_signup_email"]' ),
 					list_id = $newsletter_container.find( 'input[name="et_pb_signup_list_id"]' ).val(),
 					$result = $newsletter_container.find( '.et_pb_newsletter_result' ).hide(),
-					service = $submit.closest( '.et_pb_newsletter_form' ).data( 'service' ) || 'mailchimp';
+					service = $submit.closest( '.et_pb_newsletter_form' ).data( 'service' ) || 'mailchimp',
+					account = $newsletter_container.find( 'input[name="et_pb_signup_account_name"]' ).val();
 
 				$firstname.removeClass( 'et_pb_signup_error' );
 				$lastname.removeClass( 'et_pb_signup_error' );
@@ -3130,7 +3138,8 @@
 						et_firstname : $firstname.val(),
 						et_lastname : $lastname.val(),
 						et_email : $email.val(),
-						et_service : service
+						et_service : service,
+						et_account: account
 					},
 					beforeSend: function() {
 						$newsletter_container
@@ -3162,27 +3171,27 @@
 						}
 					}
 				} );
-			}
+			};
 
 			window.et_fix_testimonial_inner_width = function() {
 				var window_width = $( window ).width();
 
-				if( window_width > 767 ){
+				if ( window_width > 767 ) {
 					$( '.et_pb_testimonial' ).each( function() {
-						if ( ! $(this).is(':visible') ) {
+						if ( ! $(this).is( ':visible' ) ) {
 							return;
 						}
 
-						var $testimonial      = $(this),
-							testimonial_width = $testimonial.width(),
-							$portrait         = $testimonial.find( '.et_pb_testimonial_portrait' ),
-							portrait_width    = $portrait.width(),
-							$testimonial_inner= $testimonial.find( '.et_pb_testimonial_description_inner' ),
-							$outer_column     = $testimonial.closest( '.et_pb_column' ),
-							testimonial_inner_width = testimonial_width,
-							subtract = ! ( $outer_column.hasClass( 'et_pb_column_1_3' ) || $outer_column.hasClass( 'et_pb_column_1_4' ) || $outer_column.hasClass( 'et_pb_column_3_8' ) ) ? portrait_width + 31 : 0;
+						var $testimonial            = $(this);
+						var testimonial_width       = $testimonial.width();
+						var $portrait               = $testimonial.find( '.et_pb_testimonial_portrait' );
+						var portrait_width          = $portrait.outerWidth( true );
+						var $testimonial_inner      = $testimonial.find( '.et_pb_testimonial_description_inner' );
+						var $outer_column           = $testimonial.closest( '.et_pb_column' );
+						var testimonial_inner_width = testimonial_width;
+						var subtract                = ! ( $outer_column.hasClass( 'et_pb_column_1_3' ) || $outer_column.hasClass( 'et_pb_column_1_4' ) || $outer_column.hasClass( 'et_pb_column_3_8' ) ) ? portrait_width : 0;
 
-							$testimonial_inner.width( testimonial_inner_width - subtract );
+						$testimonial_inner.width( testimonial_inner_width - subtract );
 					} );
 				} else {
 					$( '.et_pb_testimonial_description_inner' ).removeAttr( 'style' );
