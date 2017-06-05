@@ -61,7 +61,7 @@
                            <?php if($i++ % 5 == 0): ?>              
                                 </div><div class="property-thumnail-row clearfix"> 
                            <?php endif; ?> 
-                           <div class="property-thumbnail"><?php echo wp_get_attachment_image($attachment_id, 'full') ?></div>
+                           <a href="<?php echo wp_get_attachment_url( $attachment_id ) ?>" class="property-thumbnail hs-rsp-popup"><?php echo wp_get_attachment_image($attachment_id, 'full') ?></a>
                         <?php endforeach; ?> 
                         <?php endif; ?> 
                         </div>                                                                  
