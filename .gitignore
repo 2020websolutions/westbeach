@@ -30,6 +30,7 @@ wp-content/plugins/paid-memberships-pro/logs/
 
 # ignore log files
 *.log
+wp-content/updraft/log.*
 
 # ignore compiled files
 *.com
