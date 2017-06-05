@@ -12,10 +12,6 @@ function et_setup_theme() {
 
 	$template_directory = get_template_directory();
 
-	$theme_version = et_get_theme_version();
-
-	define( 'ET_CORE_VERSION', $theme_version );
-
 	require_once( $template_directory . '/core/init.php' );
 
 	et_core_setup( get_template_directory_uri() );
@@ -57,6 +53,9 @@ function et_setup_theme() {
 	) );
 
 	add_theme_support( 'woocommerce' );
+	add_theme_support( 'wc-product-gallery-zoom' );
+	add_theme_support( 'wc-product-gallery-lightbox' );
+	add_theme_support( 'wc-product-gallery-slider' );
 
 	add_theme_support( 'customize-selective-refresh-widgets' );
 
@@ -592,6 +591,11 @@ function et_divi_customizer_theme_settings( $wp_customize ) {
 	);
 
 	foreach ( $google_fonts as $google_font_name => $google_font_properties ) {
+		if ( isset( $google_font_properties['parent_font'] ) ) {
+			$parent_font = $google_font_properties['parent_font'];
+			$google_font_properties['character_set'] = $google_fonts[ $parent_font ]['character_set'];
+		}
+
 		if ( '' !== $site_domain && isset( $et_domain_fonts[$site_domain] ) && false === strpos( $google_font_properties['character_set'], $et_domain_fonts[$site_domain] ) ) {
 			continue;
 		}
