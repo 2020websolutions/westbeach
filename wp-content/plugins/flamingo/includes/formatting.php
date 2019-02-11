@@ -1,28 +1,17 @@
 <?php
 
 function flamingo_htmlize( $val ) {
-	if ( is_array( $val ) ) {
-		$result = '';
+	$result = '';
 
+	if ( is_array( $val ) ) {
 		foreach ( $val as $v ) {
-			$result .= '<li>' . flamingo_htmlize( $v ) . '</li>';
+			$result .= sprintf( '<li>%s</li>', flamingo_htmlize( $v ) );
 		}
 
-		return '<ul>' . $result . '</ul>';
+		$result = sprintf( '<ul>%s</ul>', $result );
+	} else {
+		$result = wpautop( esc_html( (string) $val ) );
 	}
 
-	return wpautop( esc_html( (string) $val ) );
-}
-
-function flamingo_csv_row( $inputs = array() ) {
-	$row = array();
-
-	foreach ( $inputs as $input ) {
-		$input = preg_replace( '/(?<!\r)\n/', "\r\n", $input );
-		$input = esc_sql( $input );
-		$input = sprintf( '"%s"', $input );
-		$row[] = $input;
-	}
-
-	return implode( ',', $row );
+	return apply_filters( 'flamingo_htmlize', $result, $val );
 }

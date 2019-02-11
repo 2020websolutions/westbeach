@@ -14,14 +14,18 @@ class Ithemes_Sync_Client_Dashboard {
 	}
 
 	public function init() {
+		$user_id    = get_current_user_id();
+		$refresh_cd = get_user_meta( $user_id, 'it-sync-refresh-cd' );
+
 		// If this user is supposed to see the client dashboard
-		if ( get_user_meta( get_current_user_id(), 'ithemes-sync-client-dashboard', true ) ) {
-			if ( ! get_user_meta( get_current_user_id(), 'ithemes-sync-client-dashboard-no-css', true ) ) {
+		if ( get_user_meta( $user_id, 'ithemes-sync-client-dashboard', true ) && empty( $refresh_cd ) ) {
+
+			if ( ! get_user_meta( $user_id, 'ithemes-sync-client-dashboard-no-css', true ) ) {
 				// Enqueue our admin scripts and styles
-				add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_dashboard_scripts' ) );
+				//add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_dashboard_scripts' ) );
 			}
 
-			if ( get_user_meta( get_current_user_id(), 'ithemes-sync-suppress-admin-notices', true ) ) {
+			if ( get_user_meta( $user_id, 'ithemes-sync-suppress-admin-notices', true ) ) {
 				add_action( 'network_admin_notices', array( $this, 'admin_notices_start' ), 1 );
 				add_action( 'user_admin_notices',    array( $this, 'admin_notices_start' ), 1 );
 				add_action( 'admin_notices',         array( $this, 'admin_notices_start' ), 1 );
@@ -43,6 +47,12 @@ class Ithemes_Sync_Client_Dashboard {
 
 			// Filter welcome panel
 			add_filter( 'show_welcome_panel', array( $this, 'show_welcome_panel' ) );
+		} else {
+			// If this is a call from the Edit User screen in sync, clear the cache.
+			if ( ! empty( $refresh_cd ) ) {
+				delete_user_meta( $user_id, 'it-sync-refresh-cd' );
+				$this->clear_cache();
+			}
 		}
 
 		add_action( 'admin_menu', array( $this, 'admin_menu' ), 999999 ); //We want to be last!
@@ -206,6 +216,7 @@ class Ithemes_Sync_Client_Dashboard {
 				'new-content',
 					'new-post',
 					'new-page',
+				'edit',
 				'top-secondary',
 					'my-account',
 						'user-actions',
@@ -247,6 +258,7 @@ class Ithemes_Sync_Client_Dashboard {
 		$iterations = 0;
 		while ( ! empty( $admin_bar_nodes ) && ++$iterations <= 100 ) {
 			foreach ( $admin_bar_nodes as $key => $current_node ) {
+				$edit_found = $current_node->id == 'edit';
 				if ( in_array( $current_node->id, $this->_admin_bar_ignored_items ) ) {
 					// Don't send ignored items
 					unset( $admin_bar_nodes[ $key ] );
@@ -258,6 +270,10 @@ class Ithemes_Sync_Client_Dashboard {
 					// If we placed a child node successfully, remove it
 					unset( $admin_bar_nodes[ $key ] );
 				}
+			}
+
+			if ( ! $edit_found  && ( current_user_can( 'edit_published_pages' ) || current_user_can( 'edit_published_posts' ) ) ) {
+				$admin_bar['edit'] = array( 'id' => 'edit', 'title' => '<span class="ab-icon"></span><span class="ab-label">Edit Post/ Page</span>', 'parent' => false, 'type' => 'item', 'children' => false );
 			}
 
 			/**

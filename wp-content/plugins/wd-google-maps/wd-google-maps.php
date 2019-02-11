@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Plugin Name: Google Maps WD
+ * Plugin Name: WD Google Maps
  * Plugin URI: https://web-dorado.com/products/wordpress-google-maps-plugin.html
- * Description: Google Maps WD is an intuitive tool for creating Google maps with advanced markers, custom layers and overlays for   your website.
- * Version: 1.0.40
+ * Description: WD Google Maps is an intuitive tool for creating Google maps with advanced markers, custom layers and overlays for   your website.
+ * Version: 1.0.53
  * Author: WebDorado
- * Author URI: http://web-dorado.com/
+ * Author URI: https://web-dorado.com/wordpress-plugins-bundle.html
  * License: GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  */
  
@@ -52,6 +52,67 @@ function gmwd_map($shortcode_id, $map_id ){
     $map_controller->display();
 }
 require_once( GMWD_DIR. '/widgets.php' );
+
+function gmwd_bp_script_style() {
+	wp_enqueue_script('wd_bck_install', GMWD_URL . '/js/wd_bp_install.js', array('jquery'));
+	wp_enqueue_style('wd_bck_install', GMWD_URL . '/css/wd_bp_install.css');
+}
+add_action('admin_enqueue_scripts', 'gmwd_bp_script_style');
+
+/**
+ * Show notice to install backup plugin
+ */
+function gnwd_bp_install_notice() {
+	if ( get_option('wds_bk_notice_status') !== FALSE ) {
+		update_option('wds_bk_notice_status', '1', 'no');
+	}
+	if ( !isset($_GET['page']) || strpos(esc_html($_GET['page']), '_gmwd') === FALSE ) {
+		return '';
+	}
+
+	$prefix = "gmwd";
+	$meta_value = get_option('wd_bk_notice_status');
+	if ($meta_value === '' || $meta_value === false) {
+		ob_start();
+		?>
+		<div class="notice notice-info" id="wd_bp_notice_cont">
+			<p>
+				<img id="wd_bp_logo_notice" src="<?php echo GMWD_URL . '/images/logo.png'; ?>">
+				<?php _e("Google Maps advises:  Install brand new FREE", $prefix) ?>
+				<a href="https://wordpress.org/plugins/backup-wd/" title="<?php _e("More details", $prefix) ?>"
+				   target="_blank"><?php _e("Backup WD", $prefix) ?></a>
+				<?php _e("plugin to keep your data and website safe.", $prefix) ?>
+				<a class="button button-primary"
+				   href="<?php echo esc_url(wp_nonce_url(self_admin_url('update.php?action=install-plugin&plugin=backup-wd'), 'install-plugin_backup-wd')); ?>">
+					<span onclick="wd_bp_notice_install()"><?php _e("Install", $prefix); ?></span>
+				</a>
+			</p>
+			<button type="button" class="wd_bp_notice_dissmiss notice-dismiss"><span class="screen-reader-text"></span>
+			</button>
+		</div>
+		<script>wd_bp_url = '<?php echo add_query_arg(array('action' => 'wd_bp_dismiss',), admin_url('admin-ajax.php')); ?>'</script>
+		<?php
+		echo ob_get_clean();
+	}
+}
+
+if (!is_dir(plugin_dir_path(__DIR__) . 'backup-wd')) {
+	add_action('admin_notices', 'gnwd_bp_install_notice');
+}
+
+/**
+ * Add usermeta to db
+ *
+ * empty: notice,
+ * 1    : never show again
+ */
+function gmwd_bp_install_notice_status() {
+
+	update_option('wd_bk_notice_status', '1', 'no');
+
+}
+add_action('wp_ajax_wd_bp_dismiss', 'gmwd_bp_install_notice_status');
+
 
 
 function wd_gmwd_init(){

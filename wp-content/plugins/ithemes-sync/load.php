@@ -32,6 +32,7 @@ if ( is_admin() ) {
 require_once( $GLOBALS['ithemes_sync_path'] . '/client-dashboard.php' );
 require_once( $GLOBALS['ithemes_sync_path'] . '/social.php' );
 require_once( $GLOBALS['ithemes_sync_path'] . '/notices.php' );
+require_once( $GLOBALS['ithemes_sync_path'] . '/duplicator.php' );
 
 /**
  * Add a notice to be sent to the server when it makes a status or notice request.
@@ -123,10 +124,26 @@ function ithemes_sync_login() {
 		if ( !empty( $option['path'] ) ) {
 			switch( $option['path'] ) {
 				case 'addpost':
-					$path = 'post-new.php';
+					if ( empty( $option['path_data'] ) ) {
+						$post_type = 'post';
+					} else {
+						$post_type = $option['path_data'];
+					}
+					$path = 'post-new.php?post_type=' . $option['path_data'];
+					break;
+				case 'editpost':
+					$path = 'post.php?post=' . $option['path_data'] .'&action=edit';
+					break;
+				case 'duplicatepost':
+					list( $post_id, $post_type ) = explode( '-', $option['path_data'] );
+					$path = 'post-new.php?post_type=' . $post_type .'&ithemes-sync-duplicate-post-id=' . $post_id;
 					break;
 				case 'addpage':
 					$path = 'post-new.php?post_type=page';
+					break;
+				case 'cd':
+					$path = '';
+					add_user_meta( $option['user_id'], 'it-sync-refresh-cd', true );
 					break;
 				default:
 					$path = '';
@@ -134,8 +151,8 @@ function ithemes_sync_login() {
 		} else {
 			$path = '';
 		}
-		
 		wp_redirect( admin_url( $path ) );
+		die();
 	}
 	return false;
 }
@@ -162,3 +179,14 @@ function ithemes_sync_daily_schedule() {
     }
 }
 add_action( 'ithemes_sync_daily_schedule', 'ithemes_sync_daily_schedule' );
+
+function ithemes_sync_google_site_verification() {
+	$option = get_option( 'ithemes-sync-googst' );
+	if ( !empty( $option ) ) {
+		echo "\n\n" . $option['code'] . "\n\n";
+		if ( $option['expiry'] <= time() ) {
+			delete_option( 'ithemes-sync-googst' );
+		}
+	}
+}
+add_action('wp_head', 'ithemes_sync_google_site_verification');

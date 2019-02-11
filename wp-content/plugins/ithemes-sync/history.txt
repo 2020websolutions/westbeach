@@ -157,3 +157,46 @@
 	Improvement: Extending comment functionality
 1.16.1 - 2016-09-29 - Lew Ayotte
 	Committing missing code change, no affect on code but needs to be included
+1.17.0 - 2016-11-08 - Lew Ayotte
+	Improvement: Posts/Pages and Yoast SEO functionality
+1.17.1 - 2016-11-08 - Lew Ayotte
+	Bug Fix: Removing improper action priority.
+1.17.2 - 2016-11-09 - Lew Ayotte
+	Bug Fix: Try to set admin user as synced user for activity actions
+1.171.2 - 2016-11-09 - Lew Ayotte
+	Tagging Version Number Bug
+1.172.0 - 2016-11-14 - Lew Ayotte, Glenn Ansley
+	Enhancement: Duplicate Posts
+	Enhancement: Delete Post Revisions
+1.172.1 - 2016-11-28 - Glenn Ansley
+	Enhancement: Database Optimizations
+1.172.2 - 2016-12-01 - Glenn Ansley
+	Bug Fix: Workaround to download reports when fopen or openssl are disabled.
+1.173.0 - 2017-01-05 - Lew Ayotte
+	Enhancement: Google Search Console/Webmaster Tools functionality
+1.173.1 - 2017-01-05 - Lew Ayotte
+	Enhancement: Change how we store google verification option for Search Console/Webmaster Tools
+1.174.0 - 2017-02-15 - Lew Ayotte, Glenn Ansley
+	Bug Fix: Fix error when itsec sends data in WP_Error format
+1.175.0 - 2017-02-15 - Glenn Ansley
+	Enhancement: Add ability to read and set most options found Settings pages.
+2.0.0 - 2017-06-01 - Lew Ayotte
+	Initial release to WordPress.org
+2.0.1 - 2017-06-21 - Lew Ayotte
+	Bug Fix: Adding code to get-authentication-token verb to set the scheme to https by default if it should be
+2.0.3 - 2017-09-26 - Glenn Ansley
+	Improvement: Refactored verbs to improve add-site function from Sync Dashboard.
+2.0.4 - 2017-12-21 - Lew Ayotte
+	Bug Fix: Ignored Language Pack Updates when updating Core/Plugins/Themes, for now
+2.0.5 - 2018-01-19 - Glenn Ansley
+	Bug Fix: Fixing Multiple issues with Client Dashboard
+2.0.6 - 2018-01-26 - Glenn Ansley
+	Enhancement: Add ability to filter Edit Page/Post Link in frontend Admin Bar
+2.0.7 - 2018-02-01 - Glenn Ansley
+	Bug Fix: Fix redirect bug effecting Remote Login from Sync on some hosting providers.
+2.0.8 - 2018-03-20 - Lew Ayotte
+	Enhancement: Updating ITSEC Notifications to handle ITSEC's new notification logger
+2.0.9 - 2018-05-25 - Glenn Ansley
+	Enhancement: Adding GDPR Policy Content Suggestions
+2.0.10 - 2018-08-13 - Lew Ayotte
+	Enhancement: Updating ITSEC Notifications updates

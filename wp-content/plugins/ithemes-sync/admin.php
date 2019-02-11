@@ -26,6 +26,7 @@ class Ithemes_Sync_Admin {
 	public function __construct() {
 		add_action( 'init', array( $this, 'init' ) );
 		add_action( 'wp_ajax_ithemes_sync_hide_notice', array( $this, 'hide_authenticate_notice' ) );
+		add_action( 'admin_init', array( $this, 'add_privacy_content' ) );
 	}
 	
 	public function modify_plugins_page() {
@@ -227,6 +228,23 @@ class Ithemes_Sync_Admin {
 			$actions[] = $this->registration_link;
 		
 		return $actions;
+	}
+
+	/**
+	 * Adds privacy content to wp-admin/tools.php?wp-privacy-policy-guide
+	 *
+	 * @since 2.0.9
+	 * @return void
+	 */
+	function add_privacy_content() {
+		if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) {
+			return;
+		}
+
+		$content  = '<div class="wp-suggested-text"><h2>' . __( 'Where we send your data', 'it-l10n-ithemes-sync' ) . '</h2>';
+		$content .= sprintf( __( "%s%sSuggested text:%s This web site uses a third party service to manage administrative tasks. If you leave a comment, submit personal information via a contact form, or otherwise exchange personal details with us, it is possible that we may use this service to manage that data. Please visit the %siThemes Privacy Policy%s for more information regarding the way they handle their data.%s%s", 'it-l10n-ithemes-sync' ), '<p>', '<strong class="privacy-policy-tutorial">', '</strong>', '<a href="https://ithemes.com/privacy-policy/">', '</a>', '</p>', '</div>' );
+
+		wp_add_privacy_policy_content( 'iThemes Sync', wp_kses_post( wpautop( $content, false ) ) );
 	}
 }
 

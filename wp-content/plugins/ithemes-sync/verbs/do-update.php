@@ -39,8 +39,9 @@ class Ithemes_Sync_Verb_Do_Update extends Ithemes_Sync_Verb {
 		
 		
 		$this->original_update_details = Ithemes_Sync_Functions::get_update_details( array( 'verbose' => true, 'force_refresh' => true ) );
-		
-		
+				
+		add_action( 'upgrader_process_complete', array( $this, 'disable_language_pack_upgrades' ), 5 );
+
 		$response = array();
 		
 		if ( ! empty( $arguments['plugin'] ) ) {
@@ -55,6 +56,10 @@ class Ithemes_Sync_Verb_Do_Update extends Ithemes_Sync_Verb {
 		
 		
 		return $response;
+	}
+	
+	public function disable_language_pack_upgrades() {
+		remove_action( 'upgrader_process_complete', array( 'Language_Pack_Upgrader', 'async_upgrade' ), 20 );
 	}
 	
 	public function do_core_upgrade( $params ) {

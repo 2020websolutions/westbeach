@@ -23,140 +23,89 @@ class ITSEC_File_Change {
 	 * @return void
 	 */
 	function run() {
-
-		$settings = ITSEC_Modules::get_settings( 'file-change' );
-		$interval = 86400; //Run daily
-
-		// If we're splitting the file check run it every 6 hours.
-		if ( isset( $settings['split'] ) && true === $settings['split'] ) {
-			$interval = 12342;
-		}
-
-		add_action( 'itsec_execute_file_check_cron', array( $this, 'run_scan' ) ); //Action to execute during a cron run.
-
-		add_filter( 'itsec_logger_displays', array( $this, 'itsec_logger_displays' ) ); //adds logs metaboxes
-		add_filter( 'itsec_logger_modules', array( $this, 'itsec_logger_modules' ) );
+		add_action( 'init', array( $this, 'health_check' ) );
 		add_action( 'ithemes_sync_register_verbs', array( $this, 'register_sync_verbs' ) );
+		add_filter( 'itsec_notifications', array( $this, 'register_notification' ) );
+		add_filter( 'itsec_file-change_notification_strings', array( $this, 'register_notification_strings' ) );
 
+		add_action( 'itsec_lib_write_to_file', array( $this, 'write_to_file' ) );
+		add_action( 'itsec_lib_delete_file', array( $this, 'delete_file' ) );
 
-		if (
-			( ! defined( 'DOING_AJAX' ) || DOING_AJAX === false ) &&
-			isset( $settings['last_run'] ) &&
-			( ITSEC_Core::get_current_time() - $interval ) > $settings['last_run'] &&
-			( ! defined( 'ITSEC_FILE_CHECK_CRON' ) || false === ITSEC_FILE_CHECK_CRON )
-		) {
+		add_filter( 'heartbeat_received', array( $this, 'heartbeat' ), 10, 2 );
 
-			wp_clear_scheduled_hook( 'itsec_file_check' );
-			add_action( 'init', array( $this, 'run_scan' ) );
-
-		} elseif ( defined( 'ITSEC_FILE_CHECK_CRON' ) && true === ITSEC_FILE_CHECK_CRON && ! wp_next_scheduled( 'itsec_execute_file_check_cron' ) ) { //Use cron if needed
-
-			wp_schedule_event( time(), 'daily', 'itsec_execute_file_check_cron' );
-
-		}
-
+		add_action( 'itsec_scheduler_register_events', array( $this, 'register_event' ) );
+		add_action( 'itsec_scheduled_file-change', array( $this, 'run_scan' ) );
+		add_action( 'itsec_scheduled_file-change-fast', array( $this, 'run_scan' ) );
+		ITSEC_Core::get_scheduler()->register_loop( 'file-change', ITSEC_Scheduler::S_DAILY, 60 );
+		ITSEC_Core::get_scheduler()->register_loop( 'file-change-fast', ITSEC_Scheduler::S_DAILY, 0 );
 	}
 
-	public function run_scan() {
+	public function run_scan( $job ) {
 		require_once( dirname( __FILE__ ) . '/scanner.php' );
 
-		return ITSEC_File_Change_Scanner::run_scan();
+		$scanner = new ITSEC_File_Change_Scanner();
+		$scanner->run( $job );
+	}
+
+	public function health_check() {
+
+		$storage = self::make_progress_storage();
+
+		if ( ! $health_check = $storage->health_check() ) {
+			return;
+		}
+
+		// No need to worry yet.
+		if ( $health_check + 300 > ITSEC_Core::get_current_time_gmt() ) {
+			return;
+		}
+
+		if ( ITSEC_Core::get_scheduler()->is_single_scheduled( $storage->get( 'id' ), null ) ) {
+			return;
+		}
+
+		require_once( dirname( __FILE__ ) . '/scanner.php' );
+		ITSEC_File_Change_Scanner::recover();
 	}
 
 	/**
-	 * Register file change detection for logger
+	 * When iThemes Security writes to a file, store the file's hash so the change is not seen as unexpected.
 	 *
-	 * Registers the file change detection module with the core logger functionality.
-	 *
-	 * @since 4.0.0
-	 *
-	 * @param  array $logger_modules array of logger modules
-	 *
-	 * @return array array of logger modules
+	 * @param string $file
 	 */
-	public function itsec_logger_modules( $logger_modules ) {
+	public function write_to_file( $file ) {
+		$hashes = ITSEC_Modules::get_setting( 'file-change', 'expected_hashes', array() );
+		$hash   = @md5_file( $file );
 
-		$logger_modules['file_change'] = array(
-			'type'     => 'file_change',
-			'function' => __( 'File Changes Detected', 'better-wp-security' ),
-		);
-
-		return $logger_modules;
-
+		if ( $hash && ( ! isset( $hashes[ $file ] ) || $hashes[ $file ] !== $hash ) ) {
+			$hashes[ $file ] = $hash;
+			ITSEC_Modules::set_setting( 'file-change', 'expected_hashes', $hashes );
+		}
 	}
 
 	/**
-	 * Array of displays for the logs screen
+	 * When a file is deleted, remove its stored hash.
 	 *
-	 * Registers the custom log page with the core plugin to allow for access from the log page's
-	 * dropdown menu.
-	 *
-	 * @since 4.0.0
-	 *
-	 * @param array $displays metabox array
-	 *
-	 * @return array metabox array
+	 * @param string $file
 	 */
-	public function itsec_logger_displays( $displays ) {
+	public function delete_file( $file ) {
+		$hashes = ITSEC_Modules::get_setting( 'file-change', 'expected_hashes', array() );
 
-		$displays[] = array(
-			'module'   => 'file_change',
-			'title'    => __( 'File Change History', 'better-wp-security' ),
-			'callback' => array( $this, 'logs_metabox_content' )
-		);
+		if ( isset( $hashes[ $file ] ) ) {
+			unset( $hashes[ $file ] );
 
-		return $displays;
-
+			ITSEC_Modules::set_setting( 'file-change', 'expected_hashes', $hashes );
+		}
 	}
 
 	/**
-	 * Render the file change log metabox
+	 * Register the file change scan event.
 	 *
-	 * Displays a metabox on the logs page, when filtered, showing all file change items.
-	 *
-	 * @since 4.0.0
-	 *
-	 * @return void
+	 * @param ITSEC_Scheduler $scheduler
 	 */
-	public function logs_metabox_content() {
-
-		if ( ! class_exists( 'ITSEC_File_Change_Log' ) ) {
-			require( dirname( __FILE__ ) . '/class-itsec-file-change-log.php' );
-		}
-
-
-		$settings = ITSEC_Modules::get_settings( 'file-change' );
-
-
-		// If we're splitting the file check run it every 6 hours. Else daily.
-		if ( isset( $settings['split'] ) && true === $settings['split'] ) {
-
-			$interval = 12342;
-
-		} else {
-
-			$interval = 86400;
-
-		}
-
-		$next_run_raw = $settings['last_run'] + $interval;
-
-		if ( date( 'j', $next_run_raw ) == date( 'j', ITSEC_Core::get_current_time() ) ) {
-			$next_run_day = __( 'Today', 'better-wp-security' );
-		} else {
-			$next_run_day = __( 'Tomorrow', 'better-wp-security' );
-		}
-
-		$next_run = $next_run_day . ' at ' . date( 'g:i a', $next_run_raw );
-
-		echo '<p>' . __( 'Next automatic scan at: ', 'better-wp-security' ) . '<strong>' . $next_run . '*</strong></p>';
-		echo '<p><em>*' . __( 'Automatic file change scanning is triggered by a user visiting your page and may not happen exactly at the time listed.', 'better-wp-security' ) . '</em>';
-
-		$log_display = new ITSEC_File_Change_Log();
-
-		$log_display->prepare_items();
-		$log_display->display();
-
+	public function register_event( $scheduler ) {
+		require_once( dirname( __FILE__ ) . '/scanner.php' );
+		ITSEC_File_Change_Scanner::schedule_start( false, $scheduler );
 	}
 
 	/**
@@ -164,9 +113,125 @@ class ITSEC_File_Change {
 	 *
 	 * @since 3.6.0
 	 *
-	 * @param Ithemes_Sync_API Sync API object.
+	 * @param Ithemes_Sync_API $api Sync API object.
 	 */
 	public function register_sync_verbs( $api ) {
 		$api->register( 'itsec-perform-file-scan', 'Ithemes_Sync_Verb_ITSEC_Perform_File_Scan', dirname( __FILE__ ) . '/sync-verbs/itsec-perform-file-scan.php' );
+		$api->register( 'itsec-ping-file-scan', 'Ithemes_Sync_Verb_ITSEC_Ping_File_Scan', dirname( __FILE__ ) . '/sync-verbs/itsec-ping-file-scan.php' );
+	}
+
+	/**
+	 * Register the file change notification.
+	 *
+	 * @param array $notifications
+	 *
+	 * @return array
+	 */
+	public function register_notification( $notifications ) {
+		$notifications['file-change'] = array(
+			'recipient'        => ITSEC_Notification_Center::R_USER_LIST_ADMIN_UPGRADE,
+			'schedule'         => ITSEC_Notification_Center::S_NONE,
+			'subject_editable' => true,
+			'optional'         => true,
+			'module'           => 'file-change',
+		);
+
+		return $notifications;
+	}
+
+	/**
+	 * Register the file change notification strings.
+	 *
+	 * @return array
+	 */
+	public function register_notification_strings() {
+		return array(
+			'label'       => esc_html__( 'File Change', 'better-wp-security' ),
+			'description' => sprintf( esc_html__( 'The %1$sFile Change Detection%2$s module will email a file scan report after changes have been detected.', 'better-wp-security' ), '<a href="#" data-module-link="file-change">', '</a>' ),
+			'subject'     => esc_html__( 'File Change Warning', 'better-wp-security' ),
+		);
+	}
+
+	/**
+	 * Add status about the currently running file scan.
+	 *
+	 * @param array $response
+	 * @param array $data
+	 *
+	 * @return array
+	 */
+	public function heartbeat( $response, $data ) {
+
+		if ( ! empty( $data['itsec_file_change_scan_status'] ) && ITSEC_Core::current_user_can_manage() ) {
+			require_once( dirname( __FILE__ ) . '/scanner.php' );
+
+			if ( ITSEC_Core::get_scheduler()->is_single_scheduled( 'file-change-fast', null ) ) {
+				ITSEC_Core::get_scheduler()->run_due_now();
+			}
+
+			$response['itsec_file_change_scan_status'] = ITSEC_File_Change_Scanner::get_status();
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Get the latest change list.
+	 *
+	 * @return array
+	 */
+	public static function get_latest_changes() {
+		$changes = get_site_option( 'itsec_file_change_latest', array() );
+
+		if ( ! is_array( $changes ) ) {
+			$changes = array();
+		}
+
+		return $changes;
+	}
+
+	/**
+	 * Make the progress torage container.
+	 *
+	 * @return ITSEC_Lib_Distributed_Storage
+	 */
+	public static function make_progress_storage() {
+		return new ITSEC_Lib_Distributed_Storage( 'file-change-progress', array(
+			'step'         => array( 'default' => '' ),
+			'chunk'        => array( 'default' => '' ),
+			'id'           => array( 'default' => '' ),
+			'data'         => array( 'default' => array() ),
+			'memory'       => array( 'default' => 0 ),
+			'memory_peak'  => array( 'default' => 0 ),
+			'process'      => array( 'default' => array() ),
+			'done_plugins' => array( 'default' => array() ),
+			'max_severity' => array( 'default' => 0 ),
+			'file_list'    => array(
+				'default'     => array(),
+				'split'       => true,
+				'chunk'       => 1000,
+				'serialize'   => 'wp_json_encode',
+				'unserialize' => 'ITSEC_File_Change::_json_decode_associative'
+			),
+			'files'        => array(
+				'default'     => array(),
+				'split'       => true,
+				'chunk'       => 1000,
+				'serialize'   => 'wp_json_encode',
+				'unserialize' => 'ITSEC_File_Change::_json_decode_associative'
+			),
+			'change_list'  => array(
+				'default' => array(
+					'added'   => array(),
+					'changed' => array(),
+					'removed' => array(),
+				),
+				'split'   => true
+			),
+		) );
+	}
+
+	public static function _json_decode_associative( $value ) {
+		return json_decode( $value, true );
 	}
 }

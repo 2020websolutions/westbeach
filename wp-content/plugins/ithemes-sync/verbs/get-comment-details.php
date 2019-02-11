@@ -26,6 +26,7 @@ class Ithemes_Sync_Verb_Get_Comment_Details extends Ithemes_Sync_Verb {
 		'include-parent-details' => true,
 		'include-post-details'   => true,
 		'include-user-details'   => true,
+		'include-comment-counts' => true,
 	);
 	
 	public function run( $arguments ) {
@@ -48,19 +49,19 @@ class Ithemes_Sync_Verb_Get_Comment_Details extends Ithemes_Sync_Verb {
 				$this->response['comments'][$comment->comment_ID] = (array) $comment;
 			}
 			
-			if ( $arguments['include-parent-details'] ) {
+			if ( !empty( $arguments['include-parent-details'] ) ) {
 				$this->add_parent_details();
 			}
 			
-			if ( $arguments['include-post-details'] ) {
+			if ( !empty( $arguments['include-post-details'] ) ) {
 				$this->add_post_details();
 			}
 			
-			if ( $arguments['include-user-details'] ) {
+			if ( !empty( $arguments['include-user-details'] ) ) {
 				$this->add_user_details();
 			}
 			
-			if ( $arguments['include-comment-counts'] ) {
+			if ( !empty( $arguments['include-comment-counts'] ) ) {
 				$this->response['comment_counts'] = $comments_count;
 			}
 		} else {

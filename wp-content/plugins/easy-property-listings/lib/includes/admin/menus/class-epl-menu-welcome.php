@@ -249,6 +249,31 @@ class EPL_Welcome {
 
 				<div class="feature-section">
 
+					<h4><?php _e( 'Version 3.1.19', 'easy-property-listings'  );?></h4>
+
+					<ul>
+						<li><?php _e( 'New: Filter added to allow filtering of epl_meta_filter_{property_meta_key_name}.', 'easy-property-listings'  );?></li>
+						<li><?php _e( 'Tweak: Allow Full URL for user profile, Twitter, Facebook, Google Plus accounts.', 'easy-property-listings'  );?></li>
+						<li><?php _e( 'Fix: Corrected the epl_property_sub_title_commercial_features filter to allow altering.', 'easy-property-listings'  );?></li>
+						<li><?php _e( 'Fix: Corrected the epl_property_sub_title_rural_features filter to allow altering.', 'easy-property-listings'  );?></li>
+						<li><?php _e( 'Fix: Corrected the epl_switch_views_sorting_title_sort filter to allow altering.', 'easy-property-listings'  );?></li>
+						<li><?php _e( 'Fix: Corrected the epl_switch_views_sorting_title_list filter to allow altering.', 'easy-property-listings'  );?></li>
+						<li><?php _e( 'Fix: Corrected the epl_switch_views_sorting_title_grid filter to allow altering.', 'easy-property-listings'  );?></li>
+					</ul>
+
+					<h4><?php _e( 'Version 3.1.18', 'easy-property-listings'  );?></h4>
+
+					<ul>
+						<li><?php _e( 'Fix: Corrected Commercial and Business epl_property_suburb function to only display suburb.', 'easy-property-listings'  );?></li>
+					</ul>
+
+					<h4><?php _e( 'Version 3.1.17', 'easy-property-listings'  );?></h4>
+
+					<ul>
+						<li><?php _e( 'Fix: Geocoding Address with only partial address details will now generate coordinates.', 'easy-property-listings'  );?></li>
+						<li><?php _e( 'Fix: Sorting rentals after performing search would sometimes return no results.', 'easy-property-listings'  );?></li>
+					</ul>
+
 					<h4><?php _e( 'Version 3.1.16', 'easy-property-listings'  );?></h4>
 
 					<ul>

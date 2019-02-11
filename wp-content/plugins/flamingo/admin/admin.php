@@ -1,6 +1,7 @@
 <?php
 
 require_once FLAMINGO_PLUGIN_DIR . '/admin/admin-functions.php';
+require_once FLAMINGO_PLUGIN_DIR . '/admin/includes/privacy.php';
 
 add_action( 'admin_menu', 'flamingo_admin_menu', 8 );
 
@@ -38,7 +39,8 @@ add_filter( 'set-screen-option', 'flamingo_set_screen_options', 10, 3 );
 function flamingo_set_screen_options( $result, $option, $value ) {
 	$flamingo_screens = array(
 		'toplevel_page_flamingo_per_page',
-		'flamingo_page_flamingo_inbound_per_page' );
+		'flamingo_page_flamingo_inbound_per_page',
+	);
 
 	if ( in_array( $option, $flamingo_screens ) ) {
 		$result = $value;
@@ -50,58 +52,64 @@ function flamingo_set_screen_options( $result, $option, $value ) {
 add_action( 'admin_enqueue_scripts', 'flamingo_admin_enqueue_scripts' );
 
 function flamingo_admin_enqueue_scripts( $hook_suffix ) {
-	if ( false === strpos( $hook_suffix, 'flamingo' ) )
+	if ( false === strpos( $hook_suffix, 'flamingo' ) ) {
 		return;
+	}
 
 	wp_enqueue_style( 'flamingo-admin',
-		flamingo_plugin_url( 'admin/style.css' ),
+		flamingo_plugin_url( 'admin/css/style.css' ),
 		array(), FLAMINGO_VERSION, 'all' );
 
+	if ( is_rtl() ) {
+		wp_enqueue_style( 'flamingo-admin-rtl',
+			flamingo_plugin_url( 'admin/css/style-rtl.css' ),
+			array(), FLAMINGO_VERSION, 'all' );
+	}
+
 	wp_enqueue_script( 'flamingo-admin',
-		flamingo_plugin_url( 'admin/script.js' ),
+		flamingo_plugin_url( 'admin/js/script.js' ),
 		array( 'postbox' ), FLAMINGO_VERSION, true );
 
 	$current_screen = get_current_screen();
 
-	wp_localize_script( 'flamingo-admin', '_flamingo', array(
-		'screenId' => $current_screen->id ) );
+	wp_localize_script( 'flamingo-admin', 'flamingo', array(
+		'screenId' => $current_screen->id,
+	) );
 }
 
 /* Updated Message */
 
-add_action( 'flamingo_admin_updated_message', 'flamingo_admin_updated_message' );
+add_action( 'flamingo_admin_updated_message',
+	'flamingo_admin_updated_message' );
 
 function flamingo_admin_updated_message() {
-	if ( ! empty( $_REQUEST['message'] ) ) {
-		if ( 'contactupdated' == $_REQUEST['message'] )
-			$updated_message = esc_html( __( 'Contact updated.', 'flamingo' ) );
-		elseif ( 'contactdeleted' == $_REQUEST['message'] )
-			$updated_message = esc_html( __( 'Contact deleted.', 'flamingo' ) );
-		elseif ( 'inboundtrashed' == $_REQUEST['message'] )
-			$updated_message = esc_html( __( 'Messages trashed.', 'flamingo' ) );
-		elseif ( 'inbounduntrashed' == $_REQUEST['message'] )
-			$updated_message = esc_html( __( 'Messages restored.', 'flamingo' ) );
-		elseif ( 'inbounddeleted' == $_REQUEST['message'] )
-			$updated_message = esc_html( __( 'Messages deleted.', 'flamingo' ) );
-		elseif ( 'inboundspammed' == $_REQUEST['message'] )
-			$updated_message = esc_html( __( 'Messages got marked as spam.', 'flamingo' ) );
-		elseif ( 'inboundunspammed' == $_REQUEST['message'] )
-			$updated_message = esc_html( __( 'Messages got marked as not spam.', 'flamingo' ) );
-		elseif ( 'outboundupdated' == $_REQUEST['message'] )
-			$updated_message = esc_html( __( 'Messages updated.', 'flamingo' ) );
-		else
-			return;
-	} else {
+	if ( empty( $_REQUEST['message'] ) ) {
 		return;
 	}
 
-	if ( empty( $updated_message ) ) {
-		return;
+	if ( 'contactupdated' == $_REQUEST['message'] ) {
+		$message = __( 'Contact updated.', 'flamingo' );
+	} elseif ( 'contactdeleted' == $_REQUEST['message'] ) {
+		$message = __( 'Contact deleted.', 'flamingo' );
+	} elseif ( 'inboundupdated' == $_REQUEST['message'] ) {
+		$message = __( 'Messages updated.', 'flamingo' );
+	} elseif ( 'inboundtrashed' == $_REQUEST['message'] ) {
+		$message = __( 'Messages trashed.', 'flamingo' );
+	} elseif ( 'inbounduntrashed' == $_REQUEST['message'] ) {
+		$message = __( 'Messages restored.', 'flamingo' );
+	} elseif ( 'inbounddeleted' == $_REQUEST['message'] ) {
+		$message = __( 'Messages deleted.', 'flamingo' );
+	} elseif ( 'inboundspammed' == $_REQUEST['message'] ) {
+		$message = __( 'Messages got marked as spam.', 'flamingo' );
+	} elseif ( 'inboundunspammed' == $_REQUEST['message'] ) {
+		$message = __( 'Messages got marked as not spam.', 'flamingo' );
+	} elseif ( 'outboundupdated' == $_REQUEST['message'] ) {
+		$message = __( 'Messages updated.', 'flamingo' );
 	}
 
-?>
-<div id="message" class="updated"><p><?php echo $updated_message; ?></p></div>
-<?php
+	if ( isset( $message ) && '' !== $message ) {
+		echo sprintf( '<div id="message" class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( $message ) );
+	}
 }
 
 /* Contact */
@@ -109,7 +117,7 @@ function flamingo_admin_updated_message() {
 function flamingo_load_contact_admin() {
 	$action = flamingo_current_action();
 
-	$redirect_to = admin_url( 'admin.php?page=flamingo' );
+	$redirect_to = menu_page_url( 'flamingo', false );
 
 	if ( 'save' == $action && ! empty( $_REQUEST['post'] ) ) {
 		$post = new Flamingo_Contact( $_REQUEST['post'] );
@@ -131,10 +139,13 @@ function flamingo_load_contact_admin() {
 
 			$post->save();
 
-			$redirect_to = add_query_arg( array(
-				'action' => 'edit',
-				'post' => $post->id,
-				'message' => 'contactupdated' ), $redirect_to );
+			$redirect_to = add_query_arg(
+				array(
+					'action' => 'edit',
+					'post' => $post->id,
+					'message' => 'contactupdated',
+				), $redirect_to
+			);
 		}
 
 		wp_safe_redirect( $redirect_to );
@@ -190,8 +201,11 @@ function flamingo_load_contact_admin() {
 		header( 'Content-Type: text/csv; charset=' . get_option( 'blog_charset' ) );
 
 		$labels = array(
-			__( 'Email', 'flamingo' ), __( 'Full name', 'flamingo' ),
-			__( 'First name', 'flamingo' ), __( 'Last name', 'flamingo' ) );
+			__( 'Email', 'flamingo' ),
+			__( 'Full name', 'flamingo' ),
+			__( 'First name', 'flamingo' ),
+			__( 'Last name', 'flamingo' ),
+		);
 
 		echo flamingo_csv_row( $labels );
 
@@ -199,7 +213,8 @@ function flamingo_load_contact_admin() {
 			'posts_per_page' => -1,
 			'orderby' => 'meta_value',
 			'order' => 'ASC',
-			'meta_key' => '_email' );
+			'meta_key' => '_email',
+		);
 
 		if ( ! empty( $_GET['s'] ) ) {
 			$args['s'] = $_GET['s'];
@@ -228,7 +243,8 @@ function flamingo_load_contact_admin() {
 				$item->email,
 				$item->get_prop( 'name' ),
 				$item->get_prop( 'first_name' ),
-				$item->get_prop( 'last_name' ) );
+				$item->get_prop( 'last_name' ),
+			);
 
 			echo "\r\n" . flamingo_csv_row( $row );
 		}
@@ -238,20 +254,32 @@ function flamingo_load_contact_admin() {
 
 	if ( ! empty( $_GET['sendmail'] )
 	&& ! empty( $_REQUEST['contact_tag_id'] ) ) {
-		$redirect_to = admin_url( 'admin.php?page=flamingo_outbound' );
+		$redirect_to = menu_page_url( 'flamingo_outbound', false );
 
-		$redirect_to = add_query_arg( array(
-			'action' => 'new',
-			'contact_tag_id' => absint( $_REQUEST['contact_tag_id'] )
-			), $redirect_to );
+		$redirect_to = add_query_arg(
+			array(
+				'action' => 'new',
+				'contact_tag_id' => absint( $_REQUEST['contact_tag_id'] ),
+			), $redirect_to
+		);
 
 		wp_safe_redirect( $redirect_to );
 		exit();
 	}
 
-	$post_id = ! empty( $_REQUEST['post'] ) ? $_REQUEST['post'] : '';
+	if ( 'edit' == $action ) {
+		$post_id = isset( $_REQUEST['post'] ) ? (int) $_REQUEST['post'] : 0;
 
-	if ( Flamingo_Contact::post_type == get_post_type( $post_id ) ) {
+		if ( ! $post_id ) {
+			wp_safe_redirect( $redirect_to );
+			exit();
+		}
+
+		if ( ! current_user_can( 'flamingo_edit_contact', $post_id )
+		|| Flamingo_Contact::post_type !== get_post_type( $post_id ) ) {
+			wp_die( __( "You are not allowed to edit this item.", 'flamingo' ) );
+		}
+
 		add_meta_box( 'submitdiv', __( 'Save', 'flamingo' ),
 			'flamingo_contact_submit_meta_box', null, 'side', 'core' );
 
@@ -274,16 +302,13 @@ function flamingo_load_contact_admin() {
 
 		add_screen_option( 'per_page', array(
 			'label' => __( 'Contacts', 'flamingo' ),
-			'default' => 20 ) );
+			'default' => 20,
+		) );
 	}
 }
 
 function flamingo_contact_admin_page() {
-	$action = flamingo_current_action();
-	$post_id = ! empty( $_REQUEST['post'] ) ? $_REQUEST['post'] : '';
-
-	if ( 'edit' == $action
-	&& Flamingo_Contact::post_type == get_post_type( $post_id ) ) {
+	if ( 'edit' == flamingo_current_action() ) {
 		flamingo_contact_edit_page();
 		return;
 	}
@@ -294,15 +319,19 @@ function flamingo_contact_admin_page() {
 ?>
 <div class="wrap">
 
-<h1><?php
+<h1 class="wp-heading-inline"><?php
 	echo esc_html( __( 'Flamingo Address Book', 'flamingo' ) );
+?></h1>
 
+<?php
 	if ( ! empty( $_REQUEST['s'] ) ) {
 		echo sprintf( '<span class="subtitle">'
 			. __( 'Search results for &#8220;%s&#8221;', 'flamingo' )
 			. '</span>', esc_html( $_REQUEST['s'] ) );
 	}
-?></h1>
+?>
+
+<hr class="wp-header-end">
 
 <?php do_action( 'flamingo_admin_updated_message' ); ?>
 
@@ -333,7 +362,39 @@ function flamingo_contact_edit_page() {
 function flamingo_load_inbound_admin() {
 	$action = flamingo_current_action();
 
-	$redirect_to = admin_url( 'admin.php?page=flamingo_inbound' );
+	$redirect_to = menu_page_url( 'flamingo_inbound', false );
+
+	if ( 'save' == $action && ! empty( $_REQUEST['post'] ) ) {
+		$post = new Flamingo_Inbound_Message( $_REQUEST['post'] );
+
+		if ( ! empty( $post ) ) {
+			if ( ! current_user_can( 'flamingo_edit_inbound_message', $post->id ) ) {
+				wp_die( __( 'You are not allowed to edit this item.', 'flamingo' ) );
+			}
+
+			check_admin_referer( 'flamingo-update-inbound_' . $post->id );
+
+			$status = isset( $_POST['inbound']['status'] )
+				? $_POST['inbound']['status'] : '';
+
+			if ( ! $post->spam && 'spam' === $status ) {
+				$post->spam();
+			} elseif ( $post->spam && 'ham' === $status ) {
+				$post->unspam();
+			}
+
+			$redirect_to = add_query_arg(
+				array(
+					'action' => 'edit',
+					'post' => $post->id,
+					'message' => 'inboundupdated',
+				), $redirect_to
+			);
+		}
+
+		wp_safe_redirect( $redirect_to );
+		exit();
+	}
 
 	if ( 'trash' == $action && ! empty( $_REQUEST['post'] ) ) {
 		if ( ! is_array( $_REQUEST['post'] ) ) {
@@ -544,7 +605,8 @@ function flamingo_load_inbound_admin() {
 		$args = array(
 			'posts_per_page' => -1,
 			'orderby' => 'date',
-			'order' => 'DESC' );
+			'order' => 'DESC',
+		);
 
 		if ( ! empty( $_REQUEST['s'] ) ) {
 			$args['s'] = $_REQUEST['s'];
@@ -584,8 +646,9 @@ function flamingo_load_inbound_admin() {
 		}
 
 		$labels = array_keys( $items[0]->fields );
-		$labels[] = __( 'Date', 'flamingo' );
-		echo flamingo_csv_row( $labels );
+
+		echo flamingo_csv_row(
+			array_merge( $labels, array( __( 'Date', 'flamingo' ) ) ) );
 
 		foreach ( $items as $item ) {
 			$row = array();
@@ -602,7 +665,7 @@ function flamingo_load_inbound_admin() {
 				$row[] = $col;
 			}
 
-			$row[] = get_post_time( 'c', true, $item->id );
+			$row[] = get_post_time( 'c', true, $item->id ); // Date
 
 			echo "\r\n" . flamingo_csv_row( $row );
 		}
@@ -610,17 +673,38 @@ function flamingo_load_inbound_admin() {
 		exit();
 	}
 
-	$post_id = ! empty( $_REQUEST['post'] ) ? $_REQUEST['post'] : '';
+	if ( 'edit' == $action ) {
+		$post_id = isset( $_REQUEST['post'] ) ? (int) $_REQUEST['post'] : 0;
 
-	if ( Flamingo_Inbound_Message::post_type == get_post_type( $post_id ) ) {
-		add_meta_box( 'submitdiv', __( 'Save', 'flamingo' ),
+		if ( ! $post_id ) {
+			wp_safe_redirect( $redirect_to );
+			exit();
+		}
+
+		if ( ! current_user_can( 'flamingo_edit_inbound_message', $post_id )
+		|| Flamingo_Inbound_Message::post_type !== get_post_type( $post_id ) ) {
+			wp_die( __( "You are not allowed to edit this item.", 'flamingo' ) );
+		}
+
+		$post = new Flamingo_Inbound_Message( $post_id );
+
+		add_meta_box( 'submitdiv', __( 'Status', 'flamingo' ),
 			'flamingo_inbound_submit_meta_box', null, 'side', 'core' );
 
-		add_meta_box( 'inboundfieldsdiv', __( 'Fields', 'flamingo' ),
-			'flamingo_inbound_fields_meta_box', null, 'normal', 'core' );
+		if ( ! empty( $post->fields ) ) {
+			add_meta_box( 'inboundfieldsdiv', __( 'Fields', 'flamingo' ),
+				'flamingo_inbound_fields_meta_box', null, 'normal', 'core' );
+		}
 
-		add_meta_box( 'inboundmetadiv', __( 'Meta', 'flamingo' ),
-			'flamingo_inbound_meta_meta_box', null, 'normal', 'core' );
+		if ( ! empty( $post->consent ) ) {
+			add_meta_box( 'inboundconsentdiv', __( 'Consent', 'flamingo' ),
+				'flamingo_inbound_consent_meta_box', null, 'normal', 'core' );
+		}
+
+		if ( ! empty( $post->meta ) ) {
+			add_meta_box( 'inboundmetadiv', __( 'Meta', 'flamingo' ),
+				'flamingo_inbound_meta_meta_box', null, 'normal', 'core' );
+		}
 
 	} else {
 		if ( ! class_exists( 'Flamingo_Inbound_Messages_List_Table' ) )
@@ -633,15 +717,13 @@ function flamingo_load_inbound_admin() {
 
 		add_screen_option( 'per_page', array(
 			'label' => __( 'Messages', 'flamingo' ),
-			'default' => 20 ) );
+			'default' => 20,
+		) );
 	}
 }
 
 function flamingo_inbound_admin_page() {
-	$action = flamingo_current_action();
-	$post_id = ! empty( $_REQUEST['post'] ) ? $_REQUEST['post'] : '';
-
-	if ( 'edit' == $action && Flamingo_Inbound_Message::post_type == get_post_type( $post_id ) ) {
+	if ( 'edit' == flamingo_current_action() ) {
 		flamingo_inbound_edit_page();
 		return;
 	}
@@ -652,15 +734,19 @@ function flamingo_inbound_admin_page() {
 ?>
 <div class="wrap">
 
-<h1><?php
+<h1 class="wp-heading-inline"><?php
 	echo esc_html( __( 'Inbound Messages', 'flamingo' ) );
+?></h1>
 
+<?php
 	if ( ! empty( $_REQUEST['s'] ) ) {
 		echo sprintf( '<span class="subtitle">'
 			. __( 'Search results for &#8220;%s&#8221;', 'flamingo' )
 			. '</span>', esc_html( $_REQUEST['s'] ) );
 	}
-?></h1>
+?>
+
+<hr class="wp-header-end">
 
 <?php do_action( 'flamingo_admin_updated_message' ); ?>
 
@@ -679,8 +765,9 @@ function flamingo_inbound_admin_page() {
 function flamingo_inbound_edit_page() {
 	$post = new Flamingo_Inbound_Message( $_REQUEST['post'] );
 
-	if ( empty( $post ) )
+	if ( empty( $post ) ) {
 		return;
+	}
 
 	require_once FLAMINGO_PLUGIN_DIR . '/admin/includes/meta-boxes.php';
 
@@ -693,7 +780,7 @@ function flamingo_inbound_edit_page() {
 function flamingo_load_outbound_admin() {
 	$action = flamingo_current_action();
 
-	$redirect_to = admin_url( 'admin.php?page=flamingo_outbound' );
+	$redirect_to = menu_page_url( 'flamingo_outbound', false );
 
 	$post_id = ! empty( $_REQUEST['post'] ) ? $_REQUEST['post'] : '';
 
@@ -720,10 +807,13 @@ function flamingo_load_outbound_admin() {
 
 		//$post->save();
 
-		$redirect_to = add_query_arg( array(
-			'action' => 'edit',
-			//'post' => $post->id,
-			'message' => 'outboundupdated' ), $redirect_to );
+		$redirect_to = add_query_arg(
+			array(
+				'action' => 'edit',
+				//'post' => $post->id,
+				'message' => 'outboundupdated',
+			), $redirect_to
+		);
 
 		wp_safe_redirect( $redirect_to );
 		exit();
@@ -744,15 +834,13 @@ function flamingo_load_outbound_admin() {
 
 		add_screen_option( 'per_page', array(
 			'label' => __( 'Messages', 'flamingo' ),
-			'default' => 20 ) );
+			'default' => 20,
+		) );
 	}
 }
 
 function flamingo_outbound_admin_page() {
-	$action = flamingo_current_action();
-	$post_id = ! empty( $_REQUEST['post'] ) ? $_REQUEST['post'] : '';
-
-	if ( 'new' == $action ) {
+	if ( 'new' == flamingo_current_action() ) {
 		flamingo_outbound_edit_page();
 		return;
 	}
@@ -763,15 +851,19 @@ function flamingo_outbound_admin_page() {
 ?>
 <div class="wrap">
 
-<h1><?php
+<h1 class="wp-heading-inline"><?php
 	echo esc_html( __( 'Outbound Messages', 'flamingo' ) );
+?></h1>
 
+<?php
 	if ( ! empty( $_REQUEST['s'] ) ) {
 		echo sprintf( '<span class="subtitle">'
 			. __( 'Search results for &#8220;%s&#8221;', 'flamingo' )
 			. '</span>', esc_html( $_REQUEST['s'] ) );
 	}
-?></h1>
+?>
+
+<hr class="wp-header-end">
 
 <?php do_action( 'flamingo_admin_updated_message' ); ?>
 
@@ -794,8 +886,9 @@ function flamingo_outbound_edit_page() {
 	if ( 'edit' == $action ) {
 		$post = new Flamingo_Outbound_Message( $_REQUEST['post'] );
 
-		if ( empty( $post ) )
+		if ( empty( $post ) ) {
 			return;
+		}
 	} else { // maybe 'new' == $action
 		if ( ! empty( $_REQUEST['contact_tag_id'] ) ) {
 			$tag_id = explode( ',', $_REQUEST['contact_tag_id'] );
@@ -803,8 +896,9 @@ function flamingo_outbound_edit_page() {
 			$contact_tag = get_term( $tag_id[0],
 				Flamingo_Contact::contact_tag_taxonomy );
 
-			if ( empty( $contact_tag ) || is_wp_error( $contact_tag ) )
+			if ( empty( $contact_tag ) || is_wp_error( $contact_tag ) ) {
 				$contact_tag = null;
+			}
 		}
 	}
 

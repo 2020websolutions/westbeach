@@ -28,6 +28,7 @@ class Ithemes_Sync_Verb_Get_Authentication_Token extends Ithemes_Sync_Verb {
 			'site_url' => admin_url(), //Default to the wp-admin URL if something goes wrong.
 		);
 		$path = !empty( $arguments['path'] ) ? $arguments['path'] : '';
+		$path_data = !empty( $arguments['path_data'] ) ? $arguments['path_data'] : '';
 		
 		$auth_details = $GLOBALS['ithemes-sync-settings']->get_authentication_details( $arguments['user_id'] );
 		if ( !empty( $auth_details ) ) { //Make sure the synced user is still authenticated to this site
@@ -38,11 +39,12 @@ class Ithemes_Sync_Verb_Get_Authentication_Token extends Ithemes_Sync_Verb {
 			}
 			
 			if ( !empty( $user ) ) {
+				$scheme = is_ssl() || force_ssl_admin() ? 'https' : 'http';
 				$key = bin2hex( random_bytes( 16 ) );
 				$response = array( 
-					'site_url' => add_query_arg( 'sync-login', $key, site_url() ),
+					'site_url' => add_query_arg( 'sync-login', $key, site_url( null, $scheme ) ),
 				);
-				update_option( 'sync_login_' . $key, array( 'user_id' => $user->ID, 'path' => $path, 'expires' => current_time( 'timestamp', true ) + 90 ) );
+				update_option( 'sync_login_' . $key, array( 'user_id' => $user->ID, 'path' => $path, 'path_data' => $path_data, 'expires' => current_time( 'timestamp', true ) + 90 ) );
 			}
 		}
 

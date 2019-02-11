@@ -171,7 +171,6 @@ class Ithemes_Sync_Request_Handler {
 			}
 		}
 		
-		
 		if ( false === $power_role ) {
 			do_action( 'ithemes-sync-add-log', 'Unable to find a power user role. Unable to set current user to admin.', compact( 'wp_roles' ) );
 			return false;
@@ -190,8 +189,17 @@ class Ithemes_Sync_Request_Handler {
 			return false;
 		}
 		
+		$auth_details = $GLOBALS['ithemes-sync-settings']->get_authentication_details( $this->request['user_id'] );
 		
-		$user = current( $users );
+		foreach( $users as $u ) {
+			if ( $u->data->user_login === $auth_details['local_user'] ) {
+				//Prioritize the Sync user first, if it doesn't match for some reason, we'll fall back to any administrator user
+				$user = $u;
+				break;
+			} else {
+				$user = $u;
+			}
+		}
 		
 		if ( isset( $user->ID ) ) {
 			$GLOBALS['current_user'] = $user;
@@ -220,13 +228,12 @@ class Ithemes_Sync_Request_Handler {
 	}
 	
 	private function parse_request( $request ) {
-		if ( empty( $this->options['authentications'] ) ) {
+
+		if ( empty( $this->options['authentications'] ) && ( ! empty( $request['action'] ) && 'manage-site' != $request['action'] ) ) {
 			$this->send_response( new WP_Error( 'site-not-authenticated', 'The site does not have any authenticated users.' ) );
 		}
 		
-		
-		$this->request = $request;
-		
+		$this->request = $request;		
 		
 		$required_vars = array(
 			'1' => 'action',
@@ -241,12 +248,15 @@ class Ithemes_Sync_Request_Handler {
 				$this->send_response( new WP_Error( "missing-var-$index", 'Invalid request.' ) );
 			}
 		}
-		
+
+		// If action is manage-site, stop here
+		if ( 'manage-site' == $request['action'] ) {
+			return;
+		}
 		
 		if ( ! isset( $this->options['authentications'][$request['user_id']] ) ) {
 			$this->send_response( new WP_Error( 'user-not-authenticated', 'The requested user is not authenticated.' ) );
 		}
-		
 		
 		$user_data = $this->options['authentications'][$request['user_id']];
 		

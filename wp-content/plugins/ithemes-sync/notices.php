@@ -25,7 +25,7 @@ class Ithemes_Sync_Notices {
 			add_action( 'backupbuddy_run_remote_snapshot_response', array( $this, 'backupbuddy_run_remote_snapshot_response' ) );
 			
 			/* iThemes Security */
-	        add_action( 'itsec_log_event', array( $this, 'itsec_log_event' ), 10, 8 );
+	        add_action( 'itsec_log_add', array( $this, 'itsec_log_add' ), 10, 3 );
 		}
 	}
 	
@@ -43,12 +43,12 @@ class Ithemes_Sync_Notices {
 		}
 	}
 	
-	function itsec_log_event( $module, $priority, $data, $host, $username, $user, $url, $referrer ) {
-		if ( !empty( $data ) ) {
-			if ( isset( $data['query_string'] ) && empty( $data['query_string'] ) ) {
-				return;
+	function itsec_log_add( $data, $id, $log_type ) {
+		if ( !empty( $data ) && is_array( $data ) ) {
+			if ( 'action' == $data['type'] 
+				|| ( 'process-stop' == $data['type'] && 'malware' == $data['module'] ) ) {
+				ithemes_sync_send_urgent_notice( 'ithemes-security', 'report', 'iThemes Security', 'iThemes Security', $data );
 			}
-			ithemes_sync_send_urgent_notice( 'ithemes-security', 'report', 'iThemes Security', 'iThemes Security', $data );
 		}
 	}
 	

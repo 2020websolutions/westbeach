@@ -9,9 +9,11 @@ class ITSEC_Settings_Page_Sidebar_Widget_Temp_Whitelist extends ITSEC_Settings_P
 	}
 
 	public function render( $form ) {
+
+		/** @var ITSEC_Lockout $itsec_lockout */
 		global $itsec_lockout;
 
-		$lockouts = $itsec_lockout->get_lockouts( 'all', true );
+		$lockouts = $itsec_lockout->get_lockouts();
 		$users = array();
 		$hosts = array();
 
@@ -77,6 +79,8 @@ class ITSEC_Settings_Page_Sidebar_Widget_Temp_Whitelist extends ITSEC_Settings_P
 	}
 
 	protected function save( $data ) {
+
+		/** @var ITSEC_Lockout $itsec_lockout */
 		global $itsec_lockout;
 
 		$count = 0;

@@ -121,7 +121,7 @@ class GMWD{
             wp_enqueue_script('frontend_init_map-js', GMWD_URL . '/js/init_map.js', array(), $version, false );
             wp_enqueue_script('frontend_main-js', GMWD_URL . '/js/frontend_main.js', array(), $version, false );
 
-            wp_enqueue_style('font_awsome-css',  GMWD_URL . '/css/font-awesome/font-awesome.css', array(), $version);
+            //wp_enqueue_style('font_awsome-css',  GMWD_URL . '/css/font-awesome/font-awesome.css', array(), $version);
             wp_enqueue_style('bootstrap-css',  GMWD_URL . '/css/bootstrap.css', array(), $version);
             wp_enqueue_style('frontend_main-css',  GMWD_URL . '/css/frontend_main.css', array(), $version);
         }
