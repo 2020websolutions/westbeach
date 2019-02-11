@@ -17,6 +17,14 @@ function et_fb_enqueue_main_assets() {
 
 	wp_register_style( 'et_pb_admin_date_css', "{$root}/styles/jquery-ui-1.10.4.custom.css", array(), $ver );
 
+	if ( et_is_builder_plugin_active() || et_builder_post_is_of_custom_post_type() ) {
+		$responsive_preview_styles = 'responsive-preview-wrapped.css';
+	} else {
+		$responsive_preview_styles = 'responsive-preview.css';
+	}
+
+	wp_register_style( 'et-fb-responsive-preview', "{$assets}/css/{$responsive_preview_styles}", array(), $ver );
+
 	// Enqueue styles if the Divi Builder plugin is not active.
 	if ( ! et_is_builder_plugin_active() ) {
 		wp_enqueue_style( 'et-frontend-builder', "{$assets}/css/style.css", array(
@@ -24,12 +32,21 @@ function et_fb_enqueue_main_assets() {
 			'wp-mediaelement',
 			'wp-color-picker',
 			'et-core-admin',
+			'et-fb-responsive-preview',
 		), $ver );
 	}
 
 	// Load Divi Builder style.css file with hardcore CSS resets and Full Open Sans font if the Divi Builder plugin is active
 	if ( et_is_builder_plugin_active() ) {
-		wp_enqueue_style( 'et-builder-divi-builder-styles', "{$assets}/css/divi-builder-style.css", array( 'et-core-admin' ), $ver );
+		wp_enqueue_style(
+			'et-builder-divi-builder-styles',
+			"{$assets}/css/divi-builder-style.css",
+			array( 'et-core-admin', 'wp-color-picker', 'et-fb-responsive-preview' ),
+			$ver
+		);
+	}
+
+	if ( ! et_core_use_google_fonts() || et_is_builder_plugin_active() ) {
 		et_fb_enqueue_open_sans();
 	}
 
@@ -91,7 +108,12 @@ function et_fb_enqueue_assets() {
 
 	wp_register_script( 'iris', admin_url( 'js/iris.min.js' ), array( 'jquery-ui-draggable', 'jquery-ui-slider', 'jquery-touch-punch' ), false, 1 );
 	wp_register_script( 'wp-color-picker', admin_url( 'js/color-picker.min.js' ), array( 'iris' ), false, 1 );
-	wp_register_script( 'wp-color-picker-alpha', "{$root}/scripts/ext/wp-color-picker-alpha.min.js", array( 'wp-color-picker' ) );
+
+	if ( version_compare( $wp_major_version, '4.9', '>=' ) ) {
+		wp_register_script( 'wp-color-picker-alpha', "{$root}/scripts/ext/wp-color-picker-alpha.min.js", array( 'jquery', 'wp-color-picker' ), ET_BUILDER_VERSION, true );
+	} else {
+		wp_register_script( 'wp-color-picker-alpha', "{$root}/scripts/ext/wp-color-picker-alpha-48.min.js", array( 'jquery', 'wp-color-picker' ), ET_BUILDER_VERSION, true );
+	}
 
 	$colorpicker_l10n = array(
 		'clear'         => esc_html__( 'Clear', 'et_builder' ),
@@ -105,36 +127,53 @@ function et_fb_enqueue_assets() {
 	wp_register_script( 'react-tiny-mce', "{$assets}/vendors/tinymce.min.js" );
 
 	if ( version_compare( $wp_major_version, '4.5', '<' ) ) {
-		wp_register_script( 'et_pb_admin_date_js', "{$root}/scripts/ext/jquery-ui-1.10.4.custom.min.js", array( 'jquery' ), $ver, true );
+		$jQuery_ui = 'et_pb_admin_date_js';
+		wp_register_script( $jQuery_ui, "{$root}/scripts/ext/jquery-ui-1.10.4.custom.min.js", array( 'jquery' ), $ver, true );
 	} else {
-		wp_register_script( 'et_pb_admin_date_js', "{$root}/scripts/ext/jquery-ui-1.11.4.custom.min.js", array( 'jquery' ), $ver, true );
+		$jQuery_ui = 'jquery-ui-datepicker';
 	}
 
-	wp_register_script( 'et_pb_admin_date_addon_js', "{$root}/scripts/ext/jquery-ui-timepicker-addon.js", array( 'et_pb_admin_date_js' ), $ver, true );
+	wp_register_script( 'et_pb_admin_date_addon_js', "{$root}/scripts/ext/jquery-ui-timepicker-addon.js", array( $jQuery_ui ), $ver, true );
 
 	wp_register_script( 'wp-shortcode', includes_url() . 'js/shortcode.js', array(), $wp_version );
 
-	$fb_bundle_dependencies = apply_filters( 'et_fb_bundle_dependencies', array(
+	wp_register_script( 'jquery-tablesorter', ET_BUILDER_URI . '/scripts/ext/jquery.tablesorter.min.js', array( 'jquery' ), ET_BUILDER_VERSION, true );
+
+	wp_register_script( 'chart', ET_BUILDER_URI . '/scripts/ext/chart.min.js', array(), ET_BUILDER_VERSION, true );
+
+	$dependencies_list = array(
 		'jquery',
 		'jquery-ui-core',
 		'jquery-ui-draggable',
 		'jquery-ui-resizable',
 		'underscore',
-		// 'minicolors',
 		'jquery-ui-sortable',
 		'jquery-effects-core',
 		'iris',
 		'wp-color-picker',
 		'wp-color-picker-alpha',
 		'react-tiny-mce',
-		'easypiechart',
 		'et_pb_admin_date_addon_js',
-		'salvattore',
-		'hashchange',
 		'wp-shortcode',
 		'heartbeat',
 		'wp-mediaelement',
-	) );
+		'jquery-tablesorter',
+		'chart',
+		'react',
+		'react-dom',
+	);
+
+	// Add dependency on et-shortcode-js only if Divi Theme is used or ET Shortcodes plugin activated
+	if ( ! et_is_builder_plugin_active() || et_is_shortcodes_plugin_active() ) {
+		$dependencies_list[] = 'et-shortcodes-js';
+	}
+
+	$fb_bundle_dependencies = apply_filters( 'et_fb_bundle_dependencies', $dependencies_list );
+
+	// Adding concatenated script as dependencies for script debugging
+	if ( et_load_unminified_scripts() ) {
+		array_push( $fb_bundle_dependencies, 'easypiechart', 'salvattore', 'hashchange' );
+	}
 
 	// enqueue the Avada script before 'et-frontend-builder' to make sure easypiechart ( and probably some others ) override the scripts from Avada.
 	if ( wp_script_is( 'avada' ) ) {
@@ -144,8 +183,46 @@ function et_fb_enqueue_assets() {
 		wp_enqueue_script( 'avada' );
 	}
 
+	$DEBUG        = defined( 'ET_DEBUG' ) && ET_DEBUG;
+	$core_scripts = ET_CORE_URL . '/admin/js';
+
+	if ( $DEBUG || DiviExtensions::is_debugging_extension() ) {
+		wp_enqueue_script( 'react', 'https://cdn.jsdelivr.net/npm/react@16.2/umd/react.development.js', array(), '16.2', true );
+		wp_enqueue_script( 'react-dom', 'https://cdn.jsdelivr.net/npm/react-dom@16.2/umd/react-dom.development.js', array( 'react' ), '16.2', true );
+		add_filter( 'script_loader_tag', 'et_core_add_crossorigin_attribute', 10, 3 );
+	} else {
+		wp_enqueue_script( 'react', "{$core_scripts}/react.production.min.js", array(), '16.2', true );
+		wp_enqueue_script( 'react-dom', "{$core_scripts}/react-dom.production.min.js", array( 'react' ), '16.2', true );
+	}
+
 	// Enqueue scripts.
-	wp_enqueue_script( 'et-frontend-builder', "{$app}/bundle.js", $fb_bundle_dependencies, $ver, true );
+	$bundle = "{$app}/bundle.js";
+	if ( $DEBUG ) {
+		$site_url       = wp_parse_url( get_site_url() );
+		$hot_bundle_url = "{$site_url['scheme']}://{$site_url['host']}:31495/bundle.js";
+
+		wp_enqueue_script( 'et-frontend-builder', $hot_bundle_url, $fb_bundle_dependencies, $ver, true );
+
+		// Add the bundle as fallback in case webpack-dev-server is not running
+		wp_add_inline_script(
+			'et-frontend-builder',
+			sprintf( 'window.ET_FB || document.write(\'<script src="%s">\x3C/script>\')', "$bundle?ver={$ver}" ),
+			'after'
+		);
+	} else {
+		wp_enqueue_script( 'et-frontend-builder', $bundle, $fb_bundle_dependencies, $ver, true );
+	}
+
+	// Search for additional bundles
+	$additional_bundles = array();
+	foreach ( glob( ET_BUILDER_DIR . 'frontend-builder/bundle.*.js' ) as $chunk ) {
+		$additional_bundles[] = "{$app}/" . basename( $chunk );
+	}
+	// Pass bundle path and additional bundles to preload
+	wp_localize_script( 'et-frontend-builder', 'et_webpack_bundle', array(
+		'path'    => "{$app}/",
+		'preload' => $additional_bundles,
+	));
 
 	// Enqueue failure notice script.
 	wp_enqueue_script( 'et-frontend-builder-failure', "{$assets}/scripts/failure_notice.js", array(), $ver, true );

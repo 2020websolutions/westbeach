@@ -29,7 +29,7 @@ h1, h2, h3, h4{
 }
 .gmwd_upgrade{
     clear: both;
-    padding: 0px 15px;
+    padding: 10px 15px;
     background: #fff;
     margin: 6px 0px;
     color: #6e7990;
@@ -38,14 +38,22 @@ h1, h2, h3, h4{
     line-height: 30px;
 
 }
-.gmwd_upgrade .wd-table{
+.wd-upgrade-table{
     background-color: #D8D8D8;
     padding: 1px 5px;
     font-size: 11px;  
 }
 
-.gmwd_upgrade .wd-cell:first-child{
-    padding-right: 2px;
+.gmwd_upgrade .wd-cell:first-child a{
+    padding-right: 8px;
+    color: #72777c !important;
+}
+.gmwd_upgrade .wd-cell:last-child {
+    background: #45A6B7;
+    padding: 1px 18px;
+}
+.gmwd_upgrade .wd-cell:last-child a{
+    color: #fff !important;
 }
 .gmwd_upgrade a, .ytwd_upgrade a:hover {
     text-decoration: none !important;

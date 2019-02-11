@@ -89,21 +89,23 @@ class Ithemes_Sync_Settings {
 		$this->options_modified = true;
 	}
 	
-	public function add_authentication( $user_id, $username, $key ) {
+	public function add_authentication( $sync_site_id, $ithemes_username, $key, $wp_user_login = false ) {
 		$this->init();
-		
 		
 		if ( ! isset( $this->options['authentications'] ) || ! is_array( $this->options['authentications'] ) ) {
 			$this->options['authentications'] = array();
 		}
 		
-		$local_user = wp_get_current_user();
+		if ( empty( $wp_user_login ) ) {
+			$local_user    = wp_get_current_user();
+			$wp_user_login = $local_user->user_login;
+		}
 		
-		$this->options['authentications'][$user_id] = array(
+		$this->options['authentications'][$sync_site_id] = array(
 			'key'        => $key,
 			'timestamp'  => time(),
-			'local_user' => $local_user->user_login,
-			'username'   => $username,
+			'local_user' => $wp_user_login,
+			'username'   => $ithemes_username,
 		);
 		
 		$this->options_modified = true;

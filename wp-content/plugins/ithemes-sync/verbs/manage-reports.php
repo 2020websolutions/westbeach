@@ -72,16 +72,18 @@ class Ithemes_Sync_Verb_Manage_Reports extends Ithemes_Sync_Verb {
 		
         $report_url = 'https://s3.amazonaws.com/sync-reports.ithemes.com/' . $dest_filename;
         $upload_path = Ithemes_Sync_Functions::get_upload_reports_dir();
+		$result = false;
         
         if ( wp_is_writable( $upload_path ) ) {
 	        if ( ! file_exists( $upload_path . '/index.php' ) ) {
                 @file_put_contents( $upload_path . '/index.php', '<?php' . PHP_EOL . '// Silence is golden.' );
 	        }
-            $contents = @file_get_contents( $report_url );
-            @file_put_contents( $upload_path . '/' . $dest_filename, $contents );
-            $result = Ithemes_Sync_Functions::get_upload_reports_url()  . '/' . $dest_filename;
-		} else {
-			$result = false;
+			$response = wp_remote_get( $report_url );
+			if ( ! is_wp_error( $response ) && 200 == wp_remote_retrieve_response_code( $response ) ) {
+				$contents = wp_remote_retrieve_body( $response );
+				@file_put_contents( $upload_path . '/' . $dest_filename, $contents );
+				$result = Ithemes_Sync_Functions::get_upload_reports_url()  . '/' . $dest_filename;
+			}
 		}
 		
 		return $result;

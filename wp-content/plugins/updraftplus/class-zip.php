@@ -1,25 +1,39 @@
 <?php
 
-if (!defined ('ABSPATH')) die('No direct access allowed');
+if (!defined('ABSPATH')) die('No direct access allowed');
 
-if (class_exists('ZipArchive')):
-# We just add a last_error variable for comaptibility with our UpdraftPlus_PclZip object
+if (class_exists('ZipArchive')) :
+/**
+ * We just add a last_error variable for comaptibility with our UpdraftPlus_PclZip object
+ */
 class UpdraftPlus_ZipArchive extends ZipArchive {
-	public $last_error = 'Unknown: ZipArchive does not return error messages';
+
+		public $last_error = 'Unknown: ZipArchive does not return error messages';
 }
 endif;
 
-# A ZipArchive compatibility layer, with behaviour sufficient for our usage of ZipArchive
+/**
+ * A ZipArchive compatibility layer, with behaviour sufficient for our usage of ZipArchive
+ */
 class UpdraftPlus_PclZip {
 
 	protected $pclzip;
+
 	protected $path;
+
 	protected $addfiles;
+
 	protected $adddirs;
+
 	private $statindex;
+
 	private $include_mtime = false;
+
 	public $last_error;
 
+	/**
+	 * Constructor
+	 */
 	public function __construct() {
 		$this->addfiles = array();
 		$this->adddirs = array();
@@ -28,13 +42,24 @@ class UpdraftPlus_PclZip {
 		if (!defined('PCLZIP_TEMPORARY_DIR')) define('PCLZIP_TEMPORARY_DIR', trailingslashit($updraftplus->backups_dir_location()));
 	}
 
-	# Used to include mtime in statindex (by default, not done - to save memory; probably a bit paranoid)
+	/**
+	 * Used to include mtime in statindex (by default, not done - to save memory; probably a bit paranoid)
+	 *
+	 * @return null
+	 */
 	public function ud_include_mtime() {
 		$this->include_mtime = true;
 	}
 
+	/**
+	 * Magic function for getting an otherwise-undefined class variable
+	 *
+	 * @param String $name
+	 *
+	 * @return Boolean|Null|Integer - the value, or null if an unknown variable, or false if something goes wrong
+	 */
 	public function __get($name) {
-		if ($name == 'numFiles' || $name == 'numAll') {
+		if ('numFiles' == $name || 'numAll' == $name) {
 
 			if (empty($this->pclzip)) return false;
 
@@ -47,7 +72,7 @@ class UpdraftPlus_PclZip {
 				return (0 === $statindex) ? false : 0;
 			}
 
-			if ($name == 'numFiles') {
+			if ('numFiles' == $name) {
 				
 				$result = array();
 				foreach ($statindex as $i => $file) {
@@ -57,10 +82,10 @@ class UpdraftPlus_PclZip {
 					unset($statindex[$i]);
 				}
 
-				$this->statindex=$result;
+				$this->statindex = $result;
 
 			} else {
-				$this->statindex=$statindex;
+				$this->statindex = $statindex;
 			}
 
 			return count($this->statindex);
@@ -70,6 +95,13 @@ class UpdraftPlus_PclZip {
 
 	}
 
+	/**
+	 * Get stat info for a file
+	 *
+	 * @param Integer $i The index of the file
+	 *
+	 * @return Array - the stat info
+	 */
 	public function statIndex($i) {
 		if (empty($this->statindex[$i])) return array('name' => null, 'size' => 0);
 		$v = array('name' => $this->statindex[$i]['filename'], 'size' => $this->statindex[$i]['size']);
@@ -77,15 +109,23 @@ class UpdraftPlus_PclZip {
 		return $v;
 	}
 
+	/**
+	 * Open a zip file
+	 *
+	 * @param String  $path	 - the filesystem path to the zip file
+	 * @param Integer $flags - flags for the open operation (see ZipArchive::open() - N.B. may not all be implemented)
+	 *
+	 * @return Boolean - success or failure. Failure will set self::last_error
+	 */
 	public function open($path, $flags = 0) {
 	
-		if(!class_exists('PclZip')) include_once(ABSPATH.'/wp-admin/includes/class-pclzip.php');
-		if(!class_exists('PclZip')) {
+		if (!class_exists('PclZip')) include_once(ABSPATH.'/wp-admin/includes/class-pclzip.php');
+		if (!class_exists('PclZip')) {
 			$this->last_error = "No PclZip class was found";
 			return false;
 		}
 
-		# Route around PHP bug (exact version with the problem not known)
+		// Route around PHP bug (exact version with the problem not known)
 		$ziparchive_create_match = (version_compare(PHP_VERSION, '5.2.12', '>') && defined('ZIPARCHIVE::CREATE')) ? ZIPARCHIVE::CREATE : 1;
 
 		if ($flags == $ziparchive_create_match && file_exists($path)) @unlink($path);
@@ -97,7 +137,7 @@ class UpdraftPlus_PclZip {
 			return false;
 		}
 
-		# Make the empty directory we need to implement addEmptyDir()
+		// Make the empty directory we need to implement add_empty_dir()
 		global $updraftplus;
 		$updraft_dir = $updraftplus->backups_dir_location();
 		if (!is_dir($updraft_dir.'/emptydir') && !mkdir($updraft_dir.'/emptydir')) {
@@ -111,7 +151,11 @@ class UpdraftPlus_PclZip {
 
 	}
 
-	# Do the actual write-out - it is assumed that close() is where this is done. Needs to return true/false
+	/**
+	 * Do the actual write-out - it is assumed that close() is where this is done. Needs to return true/false
+	 *
+	 * @return boolean
+	 */
 	public function close() {
 		if (empty($this->pclzip)) {
 			$this->last_error = 'Zip file was not opened';
@@ -123,7 +167,7 @@ class UpdraftPlus_PclZip {
 
 		$activity = false;
 
-		# Add the empty directories
+		// Add the empty directories
 		foreach ($this->adddirs as $dir) {
 			if (false == $this->pclzip->add($updraft_dir.'/emptydir', PCLZIP_OPT_REMOVE_PATH, $updraft_dir.'/emptydir', PCLZIP_OPT_ADD_PATH, $dir)) {
 				$this->last_error = $this->pclzip->errorInfo(true);
@@ -156,15 +200,24 @@ class UpdraftPlus_PclZip {
 		return true;
 	}
 
-	# Note: basename($add_as) is irrelevant; that is, it is actually basename($file) that will be used. But these are always identical in our usage.
+	/**
+	 * Note: basename($add_as) is irrelevant; that is, it is actually basename($file) that will be used. But these are always identical in our usage.
+	 *
+	 * @param string $file   Specific file to add
+	 * @param string $add_as This is the name of the file that it is added as but it is usually the same as $file
+	 */
 	public function addFile($file, $add_as) {
-		# Add the files. PclZip appears to do the whole (copy zip to temporary file, add file, move file) cycle for each file - so batch them as much as possible. We have to batch by dirname(). On a test with 1000 files of 25KB each in the same directory, this reduced the time needed on that directory from 120s to 15s (or 5s with primed caches).
+		// Add the files. PclZip appears to do the whole (copy zip to temporary file, add file, move file) cycle for each file - so batch them as much as possible. We have to batch by dirname(). On a test with 1000 files of 25KB each in the same directory, this reduced the time needed on that directory from 120s to 15s (or 5s with primed caches).
 		$rdirname = dirname($file);
 		$adirname = dirname($add_as);
 		$this->addfiles[$rdirname][$adirname][] = $file;
 	}
 
-	# PclZip doesn't have a direct way to do this
+	/**
+	 * PclZip doesn't have a direct way to do this
+	 *
+	 * @param string $dir Specific Directory to empty
+	 */
 	public function addEmptyDir($dir) {
 		$this->adddirs[] = $dir;
 	}
@@ -172,13 +225,15 @@ class UpdraftPlus_PclZip {
 	public function extract($path_to_extract, $path) {
 		return $this->pclzip->extract(PCLZIP_OPT_PATH, $path_to_extract, PCLZIP_OPT_BY_NAME, $path);
 	}
-
 }
 
 class UpdraftPlus_BinZip extends UpdraftPlus_PclZip {
 
 	private $binzip;
 
+	/**
+	 * Class constructor
+	 */
 	public function __construct() {
 		global $updraftplus_backup;
 		$this->binzip = $updraftplus_backup->binzip;
@@ -192,22 +247,26 @@ class UpdraftPlus_BinZip extends UpdraftPlus_PclZip {
 	public function addFile($file, $add_as) {
 
 		global $updraftplus;
-		# Get the directory that $add_as is relative to
-		$base = $updraftplus->str_lreplace($add_as, '', $file);
+		// Get the directory that $add_as is relative to
+		$base = UpdraftPlus_Manipulation_Functions::str_lreplace($add_as, '', $file);
 
 		if ($file == $base) {
 			// Shouldn't happen; but see: https://bugs.php.net/bug.php?id=62119
 			$updraftplus->log("File skipped due to unexpected name mismatch (locale: ".setlocale(LC_CTYPE, "0")."): file=$file add_as=$add_as", 'notice', false, true);
 		} else {
 			$rdirname = untrailingslashit($base);
-			# Note: $file equals $rdirname/$add_as
+			// Note: $file equals $rdirname/$add_as
 			$this->addfiles[$rdirname][] = $add_as;
 		}
 
 	}
 
-	# The standard zip binary cannot list; so we use PclZip for that
-	# Do the actual write-out - it is assumed that close() is where this is done. Needs to return true/false
+	/**
+	 * The standard zip binary cannot list; so we use PclZip for that
+	 * Do the actual write-out - it is assumed that close() is where this is done. Needs to return true/false
+	 *
+	 * @return Boolean - success or failure state
+	 */
 	public function close() {
 
 		if (empty($this->pclzip)) {
@@ -220,7 +279,7 @@ class UpdraftPlus_BinZip extends UpdraftPlus_PclZip {
 
 		$activity = false;
 
-		# BinZip does not like zero-sized zip files
+		// BinZip does not like zero-sized zip files
 		if (file_exists($this->path) && 0 == filesize($this->path)) @unlink($this->path);
 
 		$descriptorspec = array(
@@ -240,7 +299,7 @@ class UpdraftPlus_BinZip extends UpdraftPlus_PclZip {
 
 		$added_dirs_yet = false;
 
-		# If there are no files to add, but there are empty directories, then we need to make sure the directories actually get added
+		// If there are no files to add, but there are empty directories, then we need to make sure the directories actually get added
 		if (0 == count($this->addfiles) && 0 < count($this->adddirs)) {
 			$dir = realpath($updraftplus_backup->make_zipfile_source);
 			$this->addfiles[$dir] = '././.';
@@ -257,11 +316,11 @@ class UpdraftPlus_BinZip extends UpdraftPlus_PclZip {
 			}
 
 			if (!$added_dirs_yet) {
-				# Add the directories - (in fact, with binzip, non-empty directories automatically have their entries added; but it doesn't hurt to add them explicitly)
+				// Add the directories - (in fact, with binzip, non-empty directories automatically have their entries added; but it doesn't hurt to add them explicitly)
 				foreach ($this->adddirs as $dir) {
 					fwrite($pipes[0], $dir."/\n");
 				}
-				$added_dirs_yet=true;
+				$added_dirs_yet = true;
 			}
 
 			$read = array($pipes[1], $pipes[2]);
@@ -298,9 +357,9 @@ class UpdraftPlus_BinZip extends UpdraftPlus_PclZip {
 							$something_useful_happened = true;
 						}
 						clearstatcache();
-						# Log when 20% bigger or at least every 50MB
+						// Log when 20% bigger or at least every 50MB
 						if ($new_size > $last_size*1.2 || $new_size > $last_size + 52428800) {
-							$updraftplus->log(basename($this->path).sprintf(": size is now: %.2f MB", round($new_size/1048576,1)));
+							$updraftplus->log(basename($this->path).sprintf(": size is now: %.2f MB", round($new_size/1048576, 1)));
 							$last_size = $new_size;
 						}
 					}
@@ -323,7 +382,7 @@ class UpdraftPlus_BinZip extends UpdraftPlus_PclZip {
 
 			$ret = proc_close($process);
 
-			if ($ret != 0 && $ret != 12) {
+			if (0 != $ret && 12 != $ret) {
 				if ($ret < 128) {
 					$updraftplus->log("Binary zip: error (code: $ret - look it up in the Diagnostics section of the zip manual at http://www.info-zip.org/mans/zip.html for interpretation... and also check that your hosting account quota is not full)");
 				} else {
@@ -338,5 +397,4 @@ class UpdraftPlus_BinZip extends UpdraftPlus_PclZip {
 
 		return true;
 	}
-
 }

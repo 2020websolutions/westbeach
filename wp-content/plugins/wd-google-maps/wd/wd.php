@@ -17,7 +17,7 @@
         public $overview_instance;  
         public $subscribe_instance;   
         public $config;
-        private $version = "1.0.2";   
+        private $version = "1.0.13";
 				
         ////////////////////////////////////////////////////////////////////////////////////////
         // Constructor & Destructor                                                           //
@@ -125,7 +125,17 @@
 
 		public function change_deactivation_link ( $links ) {
             $wd_options =  $this->config;
-			$links["deactivate"] = '<a href="#" class="' . $wd_options->prefix . '_deactivate_link">Deactivate</a>';
+      $deactivate_url =
+        add_query_arg(
+          array(
+            'action' => 'deactivate',
+            'plugin' => plugin_basename( $wd_options->plugin_main_file ),
+            '_wpnonce' => wp_create_nonce( 'deactivate-plugin_' . plugin_basename( $wd_options->plugin_main_file ) )
+          ),
+          admin_url( 'plugins.php' )
+        );
+
+      $links["deactivate"] = '<a href="'.$deactivate_url.'" class="' . $wd_options->prefix . '_deactivate_link">Deactivate</a>';
 			return  $links;
 		}
       		

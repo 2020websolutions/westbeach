@@ -30,6 +30,7 @@ class Ithemes_Sync_API {
 	private $verbs = array();
 	
 	private $default_verbs = array(
+		'db-optimization'              => 'Ithemes_Sync_Verb_DB_Optimization',
 		'deauthenticate-user'          => 'Ithemes_Sync_Verb_Deauthenticate_User',
 		'do-update'                    => 'Ithemes_Sync_Verb_Do_Update',
 		'get-admin-bar-item-whitelist' => 'Ithemes_Sync_Verb_Get_Admin_Bar_Item_Whitelist',
@@ -42,6 +43,7 @@ class Ithemes_Sync_API {
 		'get-php-details'              => 'Ithemes_Sync_Verb_Get_PHP_Details',
 		'get-plugin-details'           => 'Ithemes_Sync_Verb_Get_Plugin_Details',
 		'get-posts'                    => 'Ithemes_Sync_Verb_Get_Posts',
+		'get-post-types'               => 'Ithemes_Sync_Verb_Get_Post_Types',
 		'get-notices'                  => 'Ithemes_Sync_Verb_Get_Notices',
 		'get-role-details'             => 'Ithemes_Sync_Verb_Get_Role_Details',
 		'get-server-details'           => 'Ithemes_Sync_Verb_Get_Server_Details',
@@ -54,29 +56,40 @@ class Ithemes_Sync_API {
 		'get-updates'                  => 'Ithemes_Sync_Verb_Get_Updates',
 		'get-user-details'             => 'Ithemes_Sync_Verb_Get_User_Details',
 		'get-wordpress-details'        => 'Ithemes_Sync_Verb_Get_Wordpress_Details',
+		'get-wordpress-settings'       => 'Ithemes_Sync_Verb_Get_Wordpress_Settings',
 		'get-wordpress-users'          => 'Ithemes_Sync_Verb_Get_Wordpress_Users',
+		'manage-posts'                 => 'Ithemes_Sync_Verb_Manage_Posts',
 		'manage-comments'              => 'Ithemes_Sync_Verb_Manage_Comments',
 		'manage-ithemes-licenses'      => 'Ithemes_Sync_Verb_Manage_Ithemes_Licenses',
 		'manage-options'               => 'Ithemes_Sync_Verb_Manage_Options',
 		'manage-plugins'               => 'Ithemes_Sync_Verb_Manage_Plugins',
 		'manage-reports'               => 'Ithemes_Sync_Verb_Manage_Reports',
 		'manage-roles'                 => 'Ithemes_Sync_Verb_Manage_Roles',
+		'manage-site'                  => 'Ithemes_Sync_Verb_Manage_Site',
 		'manage-themes'                => 'Ithemes_Sync_Verb_Manage_Themes',
 		'manage-users'                 => 'Ithemes_Sync_Verb_Manage_Users',
 		'set-admin-bar-item-whitelist' => 'Ithemes_Sync_Verb_Set_Admin_Bar_Item_Whitelist',
 		'update-show-sync'             => 'Ithemes_Sync_Verb_Update_Show_Sync',
+		'update-google-site-verification-token' => 'Ithemes_Sync_Verb_Update_Google_Site_Verification_Token',
 	);
 	
-	
 	public function __construct() {
+		@ini_set( 'display_errors', 0 );
+
 		$GLOBALS['ithemes-sync-api'] = $this;
 		
 		require_once( $GLOBALS['ithemes_sync_path'] . '/functions.php' );
+		include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 		
 		// Gravity Forms Verbs
 		if ( class_exists( 'GFForms' ) ) {
 			$this->default_verbs['get-gf-forms']        = 'Ithemes_Sync_Verb_Get_GF_Forms';
 			$this->default_verbs['get-gf-form-entries'] = 'Ithemes_Sync_Verb_Get_GF_Form_Entries';
+		}
+		
+		// Yoast SEO Verbs
+		if ( is_plugin_active( 'wordpress-seo/wp-seo.php' ) ) {
+			$this->default_verbs['get-yoast-seo-summary'] = 'Ithemes_Sync_Verb_Get_Yoast_SEO_Summary';
 		}
 		
 		add_action( 'init', array( $this, 'init' ), 11 );

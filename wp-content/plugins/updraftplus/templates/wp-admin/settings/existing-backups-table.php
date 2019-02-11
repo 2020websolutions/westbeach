@@ -5,7 +5,7 @@ if (!defined('UPDRAFTPLUS_DIR')) die('No direct access allowed');
 $accept = apply_filters('updraftplus_accept_archivename', array());
 if (!is_array($accept)) $accept = array();
 $image_folder = UPDRAFTPLUS_DIR.'/images/icons/';
-$image_folder_url = UPDRAFTPLUS_URL.'/images/icons/';  
+$image_folder_url = UPDRAFTPLUS_URL.'/images/icons/';
 
 ?>
 <table class="existing-backups-table">
@@ -33,19 +33,21 @@ $image_folder_url = UPDRAFTPLUS_URL.'/images/icons/';
 			// $pretty_date = date_i18n('Y-m-d G:i',$key);
 			// Convert to blog time zone
 			// $pretty_date = get_date_from_gmt(gmdate('Y-m-d H:i:s', (int)$key), 'Y-m-d G:i');
-			$pretty_date = get_date_from_gmt(gmdate('Y-m-d H:i:s', (int)$key), 'M d, Y G:i');
+			$pretty_date = get_date_from_gmt(gmdate('Y-m-d H:i:s', (int) $key), 'M d, Y G:i');
 
 			$esc_pretty_date = esc_attr($pretty_date);
 			$entities = '';
 
-			$non = $backup['nonce'];
-			$rawbackup = $updraftplus_admin->raw_backup_info($backup_history, $key, $non);
+			$nonce = $backup['nonce'];
+			$rawbackup = $updraftplus_admin->raw_backup_info($backup_history, $key, $nonce);
 
-			$jobdata = $updraftplus->jobdata_getarray($non);
+			$jobdata = $updraftplus->jobdata_getarray($nonce);
 
-			$delete_button = $updraftplus_admin->delete_button($key, $non, $backup);
+			$delete_button = $updraftplus_admin->delete_button($key, $nonce, $backup);
 
-			$date_label = $updraftplus_admin->date_label($pretty_date, $key, $backup, $jobdata, $non);
+			$upload_button = $updraftplus_admin->upload_button($key, $nonce, $backup);
+
+			$date_label = $updraftplus_admin->date_label($pretty_date, $key, $backup, $jobdata, $nonce);
 
 			$log_button = $updraftplus_admin->log_button($backup);
 
@@ -53,22 +55,31 @@ $image_folder_url = UPDRAFTPLUS_URL.'/images/icons/';
 			// if ($remote_sent && !$log_button) continue;
 
 			?>
-			<tr class="updraft_existing_backups_row updraft_existing_backups_row_<?php echo $key;?>" data-key="<?php echo $key;?>" data-nonce="<?php echo $non;?>">
+			<tr class="updraft_existing_backups_row updraft_existing_backups_row_<?php echo $key;?>" data-key="<?php echo $key;?>" data-nonce="<?php echo $nonce;?>">
 
 				<td class="updraft_existingbackup_date " data-rawbackup="<?php echo $rawbackup;?>">
 					<div class="backup_date_label">
-						<?php echo $date_label;?>
 						<?php
+							echo $date_label;
+							if (!empty($backup['always_keep'])) {
+								$image_url = $image_folder_url.'lock.png';
+								?>
+								<img class="stored_icon" src="<?php echo esc_attr($image_url);?>" title="<?php echo esc_attr(__('Only allow this backup to be deleted manually (i.e. keep it even if retention limits are hit).', 'updraftplus'));?>">
+								<?php
+							}
+							if (!isset($backup['service'])) $backup['service'] = array();
 							if (!is_array($backup['service'])) $backup['service'] = array($backup['service']);
-							foreach ($backup['service'] as $service) {  
-								if ('none' === $service || '' === $service || (is_array($service) && (empty($service) || $service === array('none')))) {
+							foreach ($backup['service'] as $service) {
+								if ('none' === $service || '' === $service || (is_array($service) && (empty($service) || array('none') === $service || array('') === $service))) {
 									// Do nothing
 								} else {
 									$image_url = file_exists($image_folder.$service.'.png') ? $image_folder_url.$service.'.png' : $image_folder_url.'folder.png';
+
+									$remote_storage = ('remotesend' === $service) ? __('remote site', 'updraftplus') : $updraftplus->backup_methods[$service];
 									?>
-									<img class="stored_icon" src="<?php echo esc_attr($image_url);?>" title="<?php echo esc_attr(sprintf(__('Stored at: %s', 'updraftplus'), $updraftplus->backup_methods[$service]));?>">
-						<?php
-								}	 	
+									<img class="stored_icon" src="<?php echo esc_attr($image_url);?>" title="<?php echo esc_attr(sprintf(__('Stored at: %s', 'updraftplus'), $remote_storage));?>">
+									<?php
+								}
 							}
 						?>
 					</div>
@@ -90,7 +101,7 @@ $image_folder_url = UPDRAFTPLUS_URL.'/images/icons/';
 
 							// Set a flag according to whether or not $backup['db'] ends in .crypt, then pick this up in the display of the decrypt field.
 							$db = is_array($backup['db']) ? $backup['db'][0] : $backup['db'];
-							if ($updraftplus->is_db_encrypted($db)) $entities .= '/dbcrypted=1/';
+							if (UpdraftPlus_Encryption::is_file_encrypted($db)) $entities .= '/dbcrypted=1/';
 
 							echo $updraftplus_admin->download_db_button('db', $key, $esc_pretty_date, $backup, $accept);
 						}
@@ -119,6 +130,7 @@ $image_folder_url = UPDRAFTPLUS_URL.'/images/icons/';
 				<td class="before-restore-button">
 					<?php
 					echo $updraftplus_admin->restore_button($backup, $key, $pretty_date, $entities);
+					echo $upload_button;
 					echo $delete_button;
 					if (empty($backup['meta_foreign'])) echo $log_button;
 					?>

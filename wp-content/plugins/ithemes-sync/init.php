@@ -1,11 +1,10 @@
 <?php
-
 /*
 Plugin Name: iThemes Sync
-Plugin URI: http://ithemes.com/
+Plugin URI: http://ithemes.com/sync
 Description: Manage updates to your WordPress sites easily in one place.
 Author: iThemes
-Version: 1.16.1
+Version: 2.0.10
 Author URI: http://ithemes.com/
 Domain Path: /lang/
 iThemes Package: ithemes-sync

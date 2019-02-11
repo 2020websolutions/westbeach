@@ -1,11 +1,11 @@
-# Copyright (C) 2016 iThemes Sync
+# Copyright (C) 2018 iThemes Sync
 # This file is distributed under the same license as the iThemes Sync package.
 msgid ""
 msgstr ""
-"Project-Id-Version: iThemes Sync 1.16.1\n"
+"Project-Id-Version: iThemes Sync 2.0.10\n"
 "Report-Msgid-Bugs-To: http://ithemes.com/support/\n"
-"POT-Creation-Date: 2016-09-28 20:29:59+00:00\n"
-"PO-Revision-Date: 2016-MO-DA HO:MI+ZONE\n"
+"POT-Creation-Date: 2018-08-13 16:09:41+00:00\n"
+"PO-Revision-Date: 2018-MO-DA HO:MI+ZONE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -13,48 +13,70 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 
-#: admin.php:118
+#: admin.php:119
 msgid ""
 "iThemes Sync is active. <a class=\"ithemes-sync-notice-button\" href=\"%s"
 "\">Manage Sync</a> <a class=\"ithemes-sync-notice-dismiss\" href=\"#\">×</a>"
 msgstr ""
 
-#: admin.php:132
+#: admin.php:133
 msgid ""
 "iThemes Sync is almost ready. <a class=\"ithemes-sync-notice-button\" href="
 "\"%s\">Set Up Sync</a> <a class=\"ithemes-sync-notice-hide\" href=\"#\">×</a>"
 msgstr ""
 
-#: admin.php:147
+#: admin.php:148
 msgid ""
 "iThemes Sync will show for your user for the next %1$s. Click <a href=\"%2$s"
 "\">here</a> to hide iThemes Sync again."
 msgstr ""
 
-#: admin.php:157
+#: admin.php:158
 msgid "iThemes Sync is now hidden from your user again."
 msgstr ""
 
-#. #-#-#-#-#  ithemes-sync.pot (iThemes Sync 1.16.1)  #-#-#-#-#
+#. #-#-#-#-#  ithemes-sync.pot (iThemes Sync 2.0.10)  #-#-#-#-#
 #. Plugin Name of the plugin/theme
-#: admin.php:168 admin.php:174 settings-page.php:268
+#: admin.php:169 admin.php:175 settings-page.php:268
 msgid "iThemes Sync"
 msgstr ""
 
-#: admin.php:202 lib/updater/admin.php:181
+#: admin.php:203 lib/updater/admin.php:181
 msgid "Manage iThemes product licenses to receive automatic upgrade support"
 msgstr ""
 
-#: admin.php:202 lib/updater/admin.php:181
+#: admin.php:203 lib/updater/admin.php:181
 msgid "License"
 msgstr ""
 
-#: client-dashboard.php:350
+#: admin.php:244
+msgid "Where we send your data"
+msgstr ""
+
+#: admin.php:245
+msgid ""
+"%s%sSuggested text:%s This web site uses a third party service to manage "
+"administrative tasks. If you leave a comment, submit personal information "
+"via a contact form, or otherwise exchange personal details with us, it is "
+"possible that we may use this service to manage that data. Please visit the "
+"%siThemes Privacy Policy%s for more information regarding the way they "
+"handle their data.%s%s"
+msgstr ""
+
+#: client-dashboard.php:366
 msgctxt "Welcome panel"
 msgid "Welcome"
 msgstr ""
 
-#: init.php:20
+#: duplicator.php:31
+msgid "Duplicate Post"
+msgstr ""
+
+#: duplicator.php:71
+msgid "copy"
+msgstr ""
+
+#: init.php:19
 msgid ""
 "Only one iThemes Sync plugin can be active at a time. The plugin at <code>"
 "%1$s</code> is running while the plugin at <code>%2$s</code> was skipped in "
@@ -537,12 +559,12 @@ msgstr ""
 msgid "Sync"
 msgstr ""
 
-#: settings.php:131
+#: settings.php:133
 msgid ""
 "The user is not authenticated. Could not remove authentication for the user."
 msgstr ""
 
-#: settings.php:197
+#: settings.php:199
 msgid ""
 "A valid user was unable to be found. A valid user is required in order to do "
 "a successful ping."
@@ -564,11 +586,39 @@ msgstr ""
 msgid "Template Tags"
 msgstr ""
 
-#. #-#-#-#-#  ithemes-sync.pot (iThemes Sync 1.16.1)  #-#-#-#-#
+#: verbs/db-optimization.php:96
+msgid "Delete Trackback URLs"
+msgstr ""
+
+#: verbs/db-optimization.php:97
+msgid ""
+"Deletes URLs added to the \"pinged\" and \"to_ping\" columns in your posts "
+"table."
+msgstr ""
+
+#: verbs/db-optimization.php:382
+msgid "Never"
+msgstr ""
+
+#: verbs/get-wordpress-settings.php:141
+msgctxt "timezone date format"
+msgid "Y-m-d H:i:s"
+msgstr ""
+
+#: verbs/get-wordpress-settings.php:184
+msgid "F j, Y"
+msgstr ""
+
+#: verbs/get-wordpress-settings.php:198
+msgid "g:i a"
+msgstr ""
+
+#: verbs/get-wordpress-settings.php:239 verbs/get-wordpress-settings.php:246
+msgid "&mdash; Select &mdash;"
+msgstr ""
+
 #. Plugin URI of the plugin/theme
-#. #-#-#-#-#  ithemes-sync.pot (iThemes Sync 1.16.1)  #-#-#-#-#
-#. Author URI of the plugin/theme
-msgid "http://ithemes.com/"
+msgid "http://ithemes.com/sync"
 msgstr ""
 
 #. Description of the plugin/theme
@@ -577,4 +627,8 @@ msgstr ""
 
 #. Author of the plugin/theme
 msgid "iThemes"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://ithemes.com/"
 msgstr ""

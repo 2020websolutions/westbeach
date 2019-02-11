@@ -127,7 +127,7 @@ final class ITSEC_System_Tweaks_Config_Generators {
 			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} %24&x [NC,OR]\n";
 			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} 127\.0 [NC,OR]\n";
 			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} (globals|encode|localhost|loopback) [NC,OR]\n";
-			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} (request|concat|insert|union|declare) [NC,OR]\n";
+			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} (concat|insert|union|declare) [NC,OR]\n";
 			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} %[01][0-9A-F] [NC]\n";
 			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} !^loggedout=true\n";
 			$rewrites .= "\t\tRewriteCond %{QUERY_STRING} !^action=jetpack-sso\n";
@@ -173,7 +173,7 @@ final class ITSEC_System_Tweaks_Config_Generators {
 
 			$modification .= "\n";
 			$modification .= "\t# " . __( 'Protect System Files - Security > Settings > System Tweaks > System Files', 'better-wp-security' ) . "\n";
-			$modification .= "\tlocation = /wp-admin/install\.php { deny all; }\n";
+			$modification .= "\tlocation = /wp-admin/install.php { deny all; }\n";
 			$modification .= "\tlocation = $config_file { deny all; }\n";
 			$modification .= "\tlocation ~ /\.htaccess$ { deny all; }\n";
 			$modification .= "\tlocation ~ /readme\.html$ { deny all; }\n";
@@ -254,7 +254,7 @@ final class ITSEC_System_Tweaks_Config_Generators {
 			$modification .= "\tif ( \$args ~* \"%24&x\" ) { set \$susquery 1; }\n";
 			$modification .= "\tif ( \$args ~* \"127\.0\" ) { set \$susquery 1; }\n";
 			$modification .= "\tif ( \$args ~* \"(globals|encode|localhost|loopback)\" ) { set \$susquery 1; }\n";
-			$modification .= "\tif ( \$args ~* \"(request|insert|concat|union|declare)\" ) { set \$susquery 1; }\n";
+			$modification .= "\tif ( \$args ~* \"(insert|concat|union|declare)\" ) { set \$susquery 1; }\n";
 			$modification .= "\tif ( \$args ~* \"%[01][0-9A-F]\" ) { set \$susquery 1; }\n";
 			$modification .= "\tif ( \$args ~ \"^loggedout=true\" ) { set \$susquery 0; }\n";
 			$modification .= "\tif ( \$args ~ \"^action=jetpack-sso\" ) { set \$susquery 0; }\n";

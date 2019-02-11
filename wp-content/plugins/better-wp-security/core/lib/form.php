@@ -13,7 +13,7 @@ final class ITSEC_Form {
 		$this->options =& $options;
 	}
 
-	public static function get_post_data() {
+	public static function get_post_data( $desired_inputs = false ) {
 		$remove_vars = array( 'itsec-nonce', '_wp_http_referer' );
 		$data = $_POST;
 
@@ -49,10 +49,8 @@ final class ITSEC_Form {
 					if ( is_null( $value ) ) {
 						ITSEC_Form::add_array_value( $data, $index, $default );
 					}
-				} else {
-					if ( ! is_array( $value ) ) {
-						ITSEC_Form::add_array_value( $data, $index, $default );
-					}
+				} else if ( ! is_array( $value ) ) {
+					ITSEC_Form::add_array_value( $data, $index, $default );
 				}
 			}
 
@@ -85,6 +83,14 @@ final class ITSEC_Form {
 			}
 
 			unset( $data['--itsec-form-convert-to-array'] );
+		}
+
+		if ( is_array( $desired_inputs ) ) {
+			foreach ( array_keys( $data ) as $key ) {
+				if ( ! in_array( $key, $desired_inputs ) ) {
+					unset( $data[$key] );
+				}
+			}
 		}
 
 		return $data;
@@ -359,6 +365,7 @@ final class ITSEC_Form {
 		}
 
 		$options['type'] = 'password';
+
 		$this->add_custom_input( $var, $options );
 	}
 
@@ -435,6 +442,16 @@ final class ITSEC_Form {
 		$this->add_custom_input( $var, $options );
 	}
 
+	public function add_number( $var, $options = array() ) {
+		if ( ! is_array( $options ) ) {
+			$options = array( 'value' => $options );
+		}
+
+		$options['type'] = 'number';
+
+		$this->add_custom_input( $var, $options );
+	}
+
 	public function add_hidden( $var, $options = array() ) {
 		if ( ! is_array( $options ) ) {
 			$options = array( 'value' => $options );
@@ -443,6 +460,24 @@ final class ITSEC_Form {
 		$options['type'] = 'hidden';
 
 		$this->add_custom_input( $var, $options );
+	}
+
+	public function add_canonical_roles( $var, $options = array() ) {
+		$roles = array(
+			'administrator' => translate_user_role( 'Administrator' ),
+			'editor'        => translate_user_role( 'Editor' ),
+			'author'        => translate_user_role( 'Author' ),
+			'contributor'   => translate_user_role( 'Contributor' ),
+			'subscriber'    => translate_user_role( 'Subscriber' ),
+		);
+
+		if ( isset( $options['value'] ) ) {
+			$options['value'] = wp_parse_args( $options['value'], $roles );
+		} else {
+			$options['value'] = $roles;
+		}
+
+		$this->add_select( $var, $options );
 	}
 
 	private function add_custom_input( $var, $options ) {
@@ -592,7 +627,7 @@ final class ITSEC_Form {
 			}
 		} else if ( 'radio' === $options['type'] ) {
 			if ( ! isset( $this->tracked_strings[$options['name']] ) ) {
-				echo '<input type="hidden" name="--itsec-form-tracked-empty-strings[]" value="' . esc_attr( $options['name'] ) . '" />' . "\n";
+				echo '<input type="hidden" name="--itsec-form-tracked-strings[]" value="' . esc_attr( $options['name'] ) . '" />' . "\n";
 				$this->tracked_strings[$options['name']] = true;
 			}
 		}
